@@ -186,6 +186,10 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     /* Accept client . */
     qd = accept_wait(sockqd);
 
+    /* Read the dataset */
+    cp::ExecContext exec_ctx;
+    std::shared_ptr<arrow::RecordBatchReader> reader = ScanDataset(exec_ctx, "dataset+mem", "100").ValueOrDie();
+
     /* Run. */
     while (nbytes < MAX_BYTES)
     {
