@@ -2,6 +2,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <string>
 
 #include <arrow/api.h>
 #include <arrow/csv/api.h>
@@ -13,12 +14,17 @@
 #include <arrow/compute/cast.h>
 #include <arrow/compute/exec/exec_plan.h>
 #include <arrow/compute/exec/expression.h>
+
 #include <arrow/filesystem/filesystem.h>
 #include <arrow/filesystem/path_util.h>
 #include <arrow/util/future.h>
 #include <arrow/util/range.h>
 #include <arrow/util/thread_pool.h>
 #include <arrow/util/vector.h>
+
+#include <thallium.hpp>
+#include <thallium/serialization/stl/string.hpp>
+#include <thallium/serialization/stl/vector.hpp>
 
 
 namespace cp = arrow::compute;
@@ -127,7 +133,7 @@ arrow::compute::Expression GetFilter(std::string selectivity) {
   }
 }
 
-arrow::Result<std::shared_ptr<arrow::RecordBatchReader>> ScanDataset(cp::ExecContext& exec_context, const ScanReqRPCStub& stub, std::string backend, std::string selectivity) {
+arrow::Result<std::shared_ptr<arrow::RecordBatchReader>> ScanDataset(cp::ExecContext& exec_context, std::string backend, std::string selectivity) {
     std::string uri = "file:///mnt/cephfs/dataset";
 
     auto schema = arrow::schema({
