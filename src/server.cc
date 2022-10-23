@@ -1,12 +1,4 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-
-/* This should come first. */
 #define _POSIX_C_SOURCE 200809L
-
-/*====================================================================================================================*
- * Imports                                                                                                            *
- *====================================================================================================================*/
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -21,29 +13,10 @@
 
 #include "compute.h"
 
-/*====================================================================================================================*
- * Constants                                                                                                          *
- *====================================================================================================================*/
-
-/**
- * @brief Data size.
- */
 #define DATA_SIZE 64
-
-/**
- * @brief Maximum number of bytes to transfer.
- */
 #define MAX_BYTES (DATA_SIZE * 1024)
 
-/*====================================================================================================================*
- * sighandler()                                                                                                       *
- *====================================================================================================================*/
 
-/**
- * @brief Signal handler.
- *
- * @param signum Number of received signal.
- */
 static void sighandler(int signum)
 {
     const char *signame = strsignal(signum);
@@ -274,15 +247,6 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     }
 }
 
-/*====================================================================================================================*
- * usage()                                                                                                            *
- *====================================================================================================================*/
-
-/**
- * @brief Prints program usage.
- *
- * @param progname Program name.
- */
 static void usage(const char *progname)
 {
     fprintf(stderr, "Usage: %s MODE ipv4-address port\n", progname);
@@ -291,17 +255,6 @@ static void usage(const char *progname)
     fprintf(stderr, "  --server    Run in server mode.\n");
 }
 
-/*====================================================================================================================*
- * build_sockaddr()                                                                                                   *
- *====================================================================================================================*/
-
-/**
- * @brief Builds a socket address.
- *
- * @param ip_str    String representation of an IP address.
- * @param port_str  String representation of a port number.
- * @param addr      Storage location for socket address.
- */
 void build_sockaddr(const char *const ip_str, const char *const port_str, struct sockaddr_in *const addr)
 {
     int port = -1;
@@ -312,21 +265,6 @@ void build_sockaddr(const char *const ip_str, const char *const port_str, struct
     assert(inet_pton(AF_INET, ip_str, &addr->sin_addr) == 1);
 }
 
-/*====================================================================================================================*
- * main()                                                                                                             *
- *====================================================================================================================*/
-
-/**
- * @brief Exercises a one-way direction communication through UDP.
- *
- * This system-level test instantiates two demikernel nodes: a client and a server. The client sends UDP packets to the
- * server in a tight loop. The server process in a tight loop received UDP packets from the client.
- *
- * @param argc Argument count.
- * @param argv Argument list.
- *
- * @return On successful completion EXIT_SUCCESS is returned.
- */
 int main(int argc, char *const argv[])
 {
     /* Install signal handlers. */
