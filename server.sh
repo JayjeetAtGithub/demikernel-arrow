@@ -6,4 +6,4 @@ export MTU=1500
 export MSS=1500
 export LIBOS=catnip
 
-./code --server 10.10.1.2 3000
+./server --server 10.10.1.2 3000
