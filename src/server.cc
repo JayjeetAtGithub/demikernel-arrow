@@ -164,7 +164,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     std::shared_ptr<arrow::RecordBatchReader> reader = ScanDataset(exec_ctx, "dataset+mem", "100").ValueOrDie();
 
     auto batch = reader->ReadNext().ValueOrDie();
-    demi_sgarray_t arrow_sga = demi_sgaalloc(batch->num_columns());
+    std::cout << batch->ToString() << std::endl;
+    // demi_sgarray_t arrow_sga = demi_sgaalloc(batch->num_columns());
 
     /* Run. */
     while (nbytes < MAX_BYTES)
