@@ -116,7 +116,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 demi_sgarray_t data_sga = demi_sgaalloc(data_buff->size());
 
                 // memcpy(data_sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data(), data_buff->size());
-                memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
+                memset(data_sga.sga_segs[0].sgaseg_buf, 1, data_buff->size());
 
                 demi_qresult_t data_qr;
                 std::cout << "Pushing\n";
