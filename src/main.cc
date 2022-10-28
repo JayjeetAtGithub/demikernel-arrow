@@ -102,7 +102,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 memcpy(offset_sga.sga_segs[0].sgaseg_buf, (void*)offset_buff->data(), offset_buff->size());
 
                 demi_qresult_t data_qr;
-                std::cout << "Pusing\n";
                 push_wait(sockqd, &data_sga, &data_qr);
 
                 demi_qresult_t offset_qr;
@@ -119,6 +118,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 memcpy(data_sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data(), data_buff->size());
 
                 demi_qresult_t data_qr;
+                std::cout << "Pushing\n";
                 push_wait(sockqd, &data_sga, &data_qr);
 
                 demi_sgafree(&data_sga);
