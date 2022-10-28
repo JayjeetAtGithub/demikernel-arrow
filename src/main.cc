@@ -115,7 +115,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     std::static_pointer_cast<arrow::PrimitiveArray>(col_arr)->values();
                 demi_sgarray_t data_sga = demi_sgaalloc(data_buff->size());
 
-                memcpy(data_sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data(), data_buff->size());
+                // memcpy(data_sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data(), data_buff->size());
+                memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
 
                 demi_qresult_t data_qr;
                 std::cout << "Pushing\n";
