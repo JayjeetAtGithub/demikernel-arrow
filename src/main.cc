@@ -99,8 +99,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 demi_sgarray_t data_sga = demi_sgaalloc(data_buff->size());
                 demi_sgarray_t offset_sga = demi_sgaalloc(offset_buff->size());
 
-                memset(data_sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data(), data_buff->size());
-                memset(offset_sga.sga_segs[0].sgaseg_buf, (void*)offset_buff->data(), offset_buff->size());
+                data_sga.sga_segs[0].sgaseg_buf = (void*)data_buff->data();
+                offset_sga.sga_segs[0].sgaseg_buf = (void*)offset_buff->data();
 
                 demi_qresult_t data_qr;
                 push_wait(sockqd, &data_sga, &data_qr);
@@ -116,7 +116,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     std::static_pointer_cast<arrow::PrimitiveArray>(col_arr)->values();
                 demi_sgarray_t data_sga = demi_sgaalloc(data_buff->size());
 
-                memset(data_sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data(), data_buff->size());
+                data_sga.sga_segs[0].sgaseg_buf = (void*)data_buff->data();
 
                 demi_qresult_t data_qr;
                 push_wait(sockqd, &data_sga, &data_qr);
