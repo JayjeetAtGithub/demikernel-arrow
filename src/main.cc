@@ -96,7 +96,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 std::shared_ptr<arrow::Buffer> offset_buff = 
                     std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_offsets();
 
-                demi_sgarray_t data_sga = demi_sgaalloc(data_buff->size());
+                demi_sgarray_t data_sga = demi_sgalloc(data_buff->size());
                 demi_sgarray_t offset_sga = demi_sgalloc(offset_buff->size());
 
                 memset(data_sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data(), data_buff->size());
@@ -114,7 +114,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
             } else {
                 std::shared_ptr<arrow::Buffer> data_buff = 
                     std::static_pointer_cast<arrow::PrimitiveArray>(col_arr)->values();
-                demi_sgarray_t data_sga = demi_sgaalloc(data_buff->size());
+                demi_sgarray_t data_sga = demi_sgalloc(data_buff->size());
 
                 memset(data_sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data(), data_buff->size());
 
