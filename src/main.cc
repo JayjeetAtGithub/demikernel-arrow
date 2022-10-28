@@ -64,7 +64,6 @@ static void pop_wait(int qd, demi_qresult_t *qr)
 static void server(int argc, char *const argv[], struct sockaddr_in *local)
 {
     int qd = -1;
-    int nbytes = 0;
     int sockqd = -1;
 
     assert(demi_init(argc, argv) == 0);
@@ -103,6 +102,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 memcpy(offset_sga.sga_segs[0].sgaseg_buf, (void*)offset_buff->data(), offset_buff->size());
 
                 demi_qresult_t data_qr;
+                std::cout << "Pusing\n";
                 push_wait(sockqd, &data_sga, &data_qr);
 
                 demi_qresult_t offset_qr;
