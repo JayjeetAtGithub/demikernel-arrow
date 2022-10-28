@@ -129,7 +129,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
 static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
 {
-    int nbytes = 0;
+    int nbatches = 0;
     int sockqd = -1;
 
     assert(demi_init(argc, argv) == 0);
@@ -138,7 +138,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
 
     connect_wait(sockqd, remote);
 
-    while (nbytes < 1024)
+    while (nbatches <= 10)
     {
         demi_qresult_t qr ;
         demi_sgarray_t sga ;
@@ -147,7 +147,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         pop_wait(sockqd, &qr);
         demi_sgafree(&qr.qr_value.sga);
 
-        fprintf(stdout, "pong (%d)\n", nbytes);
+        nbatches += 1;
     }
 }
 
