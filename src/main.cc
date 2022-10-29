@@ -122,6 +122,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 int total_data_bytes_transferred = 0;
                 int total_data_bytes = data_buff->size();
                 while (total_data_bytes_transferred <= total_data_bytes) {
+                    std::cout << "..." << std::endl;
                     int actual_bytes_transferred = std::min(1024, total_data_bytes - total_data_bytes_transferred);
                     demi_sgarray_t sga = demi_sgaalloc(actual_bytes_transferred);
                     memcpy(sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data() + total_data_bytes_transferred, actual_bytes_transferred);
