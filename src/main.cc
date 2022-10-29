@@ -95,8 +95,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 std::shared_ptr<arrow::Buffer> offset_buff = 
                     std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_offsets();
 
-                int64_t total_data_bytes_transferred = 0;
-                int64_t total_data_bytes = data_buff->size();
+                int total_data_bytes_transferred = 0;
+                int total_data_bytes = data_buff->size();
                 while (total_data_bytes_transferred <= total_data_bytes) {
                     demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_data_bytes - total_data_bytes_transferred));
                     memcpy(sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data() + total_data_bytes_transferred, std::min(1024, total_data_bytes - total_data_bytes_transferred));
@@ -106,8 +106,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     demi_sgafree(&sga);
                 }
 
-                int64_t total_offset_bytes_transferred = 0;
-                int64_t total_offset_bytes = data_buff->size();
+                int total_offset_bytes_transferred = 0;
+                int total_offset_bytes = data_buff->size();
                 while (total_data_bytes_transferred <= total_offset_bytes) {
                     demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
                     memcpy(sga.sga_segs[0].sgaseg_buf, (void*)offset_buff->data() + total_offset_bytes_transferred, std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
@@ -120,8 +120,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 std::shared_ptr<arrow::Buffer> data_buff = 
                     std::static_pointer_cast<arrow::PrimitiveArray>(col_arr)->values();
                 
-                int64_t total_data_bytes_transferred = 0;
-                int64_t total_data_bytes = data_buff->size();
+                int total_data_bytes_transferred = 0;
+                int total_data_bytes = data_buff->size();
                 while (total_data_bytes_transferred <= total_data_bytes) {
                     demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_data_bytes - total_data_bytes_transferred));
                     memcpy(sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data() + total_data_bytes_transferred, std::min(1024, total_data_bytes - total_data_bytes_transferred));
