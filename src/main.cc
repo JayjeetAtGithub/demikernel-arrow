@@ -141,9 +141,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     int sockqd = -1;
 
     assert(demi_init(argc, argv) == 0);
-
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
-
     connect_wait(sockqd, remote);
 
     while (nbatches <= 10)
