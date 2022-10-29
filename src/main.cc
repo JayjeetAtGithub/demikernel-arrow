@@ -43,7 +43,6 @@ static void connect_wait(int qd, const struct sockaddr_in *saddr)
     assert(qr.qr_opcode == DEMI_OPC_CONNECT);
 }
 
-
 static void push_wait(int qd, demi_sgarray_t *sga, demi_qresult_t *qr)
 {
     demi_qtoken_t qt = -1;
