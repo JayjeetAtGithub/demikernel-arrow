@@ -148,8 +148,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
     connect_wait(sockqd, remote);
 
-    while (nbatches <= 10)
-    {
+    // while (nbatches <= 10)
+    // {
         demi_qresult_t qr ;
         demi_sgarray_t sga ;
 
@@ -157,8 +157,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         pop_wait(sockqd, &qr);
         demi_sgafree(&qr.qr_value.sga);
 
-        nbatches += 1;
-    }
+        // nbatches += 1;
+    // }
 }
 
 static void usage(const char *progname)
