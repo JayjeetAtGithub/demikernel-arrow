@@ -129,7 +129,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     // memcpy(sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data() + total_data_bytes_transferred, bytes_to_transfer);
                     memset(sga.sga_segs[0].sgaseg_buf, 1, 1024);
 
-                    demi_qresult_t data_qr;
+                    demi_qresult_t data_qr = {0};
                     push_wait(sockqd, &sga, &data_qr);
                     total_data_bytes_transferred += bytes_to_transfer;
                     demi_sgafree(&sga);
