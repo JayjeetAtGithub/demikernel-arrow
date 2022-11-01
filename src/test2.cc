@@ -87,7 +87,7 @@ static void server(int argc, char *const argv[], const struct sockaddr_in *local
 
     int64_t recv_bytes = 0;
 
-    while (recv_bytes < MAX_BYTES)
+    while (recv_bytes <= MAX_BYTES)
     {
         pop_wait(qd, &qr);
         fprintf(stdout, "pop: total bytes received: (%ld)\n", recv_bytes);
@@ -106,7 +106,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     connect_wait(sockqd, remote);
 
     int64_t sent_bytes = 0;
-    while (sent_bytes < MAX_BYTES)
+    while (sent_bytes <= MAX_BYTES)
     {
         demi_sgarray_t sga;
         sga = demi_sgaalloc(DATA_SIZE);
