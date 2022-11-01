@@ -171,7 +171,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         demi_sgarray_t sga;
 
         /* Pop scatter-gather array. */
-        pop_wait(qd, &qr);
+        pop_wait(sockqd, &qr);
 
         /* Extract received scatter-gather array. */
         memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
