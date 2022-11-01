@@ -26,7 +26,7 @@
 /**
  * @brief Data size.
  */
-#define DATA_SIZE 64
+#define DATA_SIZE 1024
 
 /**
  * @brief Maximum number of bytes to transfer.
