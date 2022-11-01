@@ -97,27 +97,34 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_data();
                 std::shared_ptr<arrow::Buffer> offset_buff = 
                     std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_offsets();
+                
+                int offset;
+                int bytes_remaining;
 
-                int total_data_bytes_transferred = 0;
-                int total_data_bytes = data_buff->size();
-                while (total_data_bytes_transferred <= total_data_bytes) {
-                    demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_data_bytes - total_data_bytes_transferred));
-                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + total_data_bytes_transferred), std::min(1024, total_data_bytes - total_data_bytes_transferred));
-                    demi_qresult_t data_qr;
-                    push_wait(sockqd, &sga, &data_qr);
-                    total_data_bytes_transferred += 1024;
-                    demi_sgafree(&sga);
+                offset = 0;
+                bytes_remaining = data_buff->size();
+                while (bytes_remaining > 0) {
+                    int packet_size = std::min(1024, bytes_remaining);
+                    demi_sgarray_t sga = demi_sgaalloc(packet_size);
+                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + offset), packet_size);
+                    demi_qresult_t qr;
+                    push_wait(qd, &sga, &qr);
+                    bytes_remaining -= packet_size;
+                    offset += packet_size;
+                    assert(demi_sgafree(&sga) == 0);
                 }
 
-                int total_offset_bytes_transferred = 0;
-                int total_offset_bytes = data_buff->size();
-                while (total_data_bytes_transferred <= total_offset_bytes) {
-                    demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
-                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(offset_buff->data() + total_offset_bytes_transferred), std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
-                    demi_qresult_t data_qr;
-                    push_wait(sockqd, &sga, &data_qr);
-                    total_offset_bytes_transferred += 1024;
-                    demi_sgafree(&sga);
+                offset = 0;
+                bytes_remaining = offset_buff->size();
+                while (bytes_remaining > 0) {
+                    int packet_size = std::min(1024, bytes_remaining);
+                    demi_sgarray_t sga = demi_sgaalloc(packet_size);
+                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(offset_buff->data() + offset), packet_size);
+                    demi_qresult_t qr;
+                    push_wait(qd, &sga, &qr);
+                    bytes_remaining -= packet_size;
+                    offset += packet_size;
+                    assert(demi_sgafree(&sga) == 0);
                 }
             } else {
                 std::shared_ptr<arrow::Buffer> data_buff = 
@@ -126,20 +133,13 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 int offset = 0;
                 int bytes_remaining = data_buff->size();
                 while (bytes_remaining > 0) {
-
                     int packet_size = std::min(1024, bytes_remaining);
                     demi_sgarray_t sga = demi_sgaalloc(packet_size);
-                    
                     memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + offset), packet_size);
-
                     demi_qresult_t qr;
-                    std::cout << "Pushing data: " << bytes_remaining << std::endl;
                     push_wait(qd, &sga, &qr);
-                    std::cout << "Pushed data" << std::endl;
-
                     bytes_remaining -= packet_size;
                     offset += packet_size;
- 
                     assert(demi_sgafree(&sga) == 0);
                 }
             }
