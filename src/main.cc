@@ -137,6 +137,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     offset += packet_size;
                     assert(demi_sgafree(&sga) == 0);
                 }
+                std::cout << "Done sending column " << i << std::endl;
             }
         }
     }
