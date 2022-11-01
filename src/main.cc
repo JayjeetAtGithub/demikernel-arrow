@@ -147,7 +147,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     int packet_size = std::min(1024, bytes_remaining);
                     demi_sgarray_t sga = demi_sgaalloc(packet_size);
                     
-                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + offset), packet_size);
+                    // memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + offset), packet_size);
+                    memset(sga.sga_segs[0].sgaseg_buf, 1, 1024);
 
                     demi_qresult_t qr;
                     push_wait(sockqd, &sga, &qr);
