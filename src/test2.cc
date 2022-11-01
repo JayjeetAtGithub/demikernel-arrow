@@ -14,7 +14,7 @@
 #include <string.h>
 
 #define DATA_SIZE 1024
-#define MAX_BYTES DATA_SIZE * 1024
+#define MAX_BYTES DATA_SIZE * 1024 * 100
 
 static void sighandler(int signum)
 {
