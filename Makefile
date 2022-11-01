@@ -4,3 +4,4 @@ default:
 	cp -r /root/lib/* /usr/local/lib
 	
 	g++ -std=c++17 -O3 src/main.cc -larrow -larrow_dataset -ldemikernel -o main
+	g++ -std=c++17 -O3 src/test.cc -ldemikernel -o test
