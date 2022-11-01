@@ -81,7 +81,7 @@ static void server(int argc, char *const argv[], const struct sockaddr_in *local
     assert(demi_listen(sockqd, 16) == 0);
     qd = accept_wait(sockqd);
 
-    unsigned int recv_bytes = 0;
+    int64_t recv_bytes = 0;
 
     while (recv_bytes < MAX_BYTES)
     {
@@ -101,7 +101,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
     connect_wait(sockqd, remote);
 
-    unsigned int sent_bytes = 0;
+    int64_t sent_bytes = 0;
     while (sent_bytes < MAX_BYTES)
     {
         demi_sgarray_t sga;
