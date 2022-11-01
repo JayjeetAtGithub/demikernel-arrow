@@ -134,7 +134,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     memset(sga.sga_segs[0].sgaseg_buf, 1, 1024);
 
                     demi_qresult_t qr;
-                    push_wait(sockqd, &sga, &qr);
+                    push_wait(qd, &sga, &qr);
 
                     // bytes_remaining -= packet_size;
                     // offset += packet_size;
