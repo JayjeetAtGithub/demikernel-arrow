@@ -86,7 +86,7 @@ static void server(int argc, char *const argv[], const struct sockaddr_in *local
     while (recv_bytes < MAX_BYTES)
     {
         pop_wait(qd, &qr);
-        fprintf(stdout, "pop: total bytes received: (%lld)\n", recv_bytes);
+        fprintf(stdout, "pop: total bytes received: (%ld)\n", recv_bytes);
         recv_bytes += qr.qr_value.sga.sga_segs[0].sgaseg_len;
     }
 
@@ -108,7 +108,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         sga = demi_sgaalloc(DATA_SIZE);
         memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
         push_wait(sockqd, &sga, &qr);
-        fprintf(stdout, "push: total bytes sent: (%lld)\n", sent_bytes);
+        fprintf(stdout, "push: total bytes sent: (%ld)\n", sent_bytes);
         sent_bytes += sga.sga_segs[0].sgaseg_len;
     }
 
