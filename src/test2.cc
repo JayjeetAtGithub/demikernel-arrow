@@ -85,10 +85,8 @@ static void server(int argc, char *const argv[], const struct sockaddr_in *local
 
     while (recv_bytes < MAX_BYTES)
     {
-        demi_sgarray_t sga;
         pop_wait(qd, &qr);
         fprintf(stdout, "pop: total bytes received: (%d)\n", recv_bytes);
-        assert(demi_sgafree(&sga) == 0);
         recv_bytes += qr.qr_value.sga.sga_segs[0].sgaseg_len;
     }
 
