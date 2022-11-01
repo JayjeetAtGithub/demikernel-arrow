@@ -69,7 +69,7 @@ static void pop_wait(int qd, demi_qresult_t *qr)
     assert(qr->qr_value.sga.sga_segs != 0);
 }
 
-static void run_server(int argc, char *const argv[], const struct sockaddr_in *local)
+static void server(int argc, char *const argv[], const struct sockaddr_in *local)
 {
     int qd = -1;
     int sockqd = -1;
@@ -86,15 +86,16 @@ static void run_server(int argc, char *const argv[], const struct sockaddr_in *l
     while (recv_bytes < MAX_BYTES)
     {
         demi_sgarray_t sga;
-        recv_bytes += pop_wait(qd, &qr);
+        pop_wait(qd, &qr);
         fprintf(stdout, "pop: total bytes received: (%d)\n", recv_bytes);
         assert(demi_sgafree(&sga) == 0);
+        recv_bytes += qr.qr_value.sga.sga_segs[0].sgaseg_len;
     }
 
     assert(recv_bytes == MAX_BYTES);
 }
 
-static void run_client(int argc, char *const argv[], const struct sockaddr_in *remote)
+static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
 {
     int sockqd = -1;
     demi_qresult_t qr;
@@ -105,10 +106,12 @@ static void run_client(int argc, char *const argv[], const struct sockaddr_in *r
     unsigned int sent_bytes = 0;
     while (sent_bytes < MAX_BYTES)
     {
+        demi_sgarray_t sga;
         sga = demi_sgaalloc(DATA_SIZE);
         memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
-        sent_bytes += push_wait(sockqd, &sga, &qr);
+        push_wait(sockqd, &sga, &qr);
         fprintf(stdout, "push: total bytes sent: (%d)\n", sent_bytes);
+        sent_bytes += sga.sga_segs[0].sgaseg_len;
     }
 
     assert(sent_bytes == MAX_BYTES);
