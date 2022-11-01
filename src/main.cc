@@ -102,7 +102,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 int total_data_bytes = data_buff->size();
                 while (total_data_bytes_transferred <= total_data_bytes) {
                     demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_data_bytes - total_data_bytes_transferred));
-                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data() + total_data_bytes_transferred, std::min(1024, total_data_bytes - total_data_bytes_transferred));
+                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + total_data_bytes_transferred), std::min(1024, total_data_bytes - total_data_bytes_transferred));
                     demi_qresult_t data_qr;
                     push_wait(sockqd, &sga, &data_qr);
                     total_data_bytes_transferred += 1024;
@@ -113,7 +113,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 int total_offset_bytes = data_buff->size();
                 while (total_data_bytes_transferred <= total_offset_bytes) {
                     demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
-                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)offset_buff->data() + total_offset_bytes_transferred, std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
+                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(offset_buff->data() + total_offset_bytes_transferred), std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
                     demi_qresult_t data_qr;
                     push_wait(sockqd, &sga, &data_qr);
                     total_offset_bytes_transferred += 1024;
