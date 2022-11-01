@@ -8,4 +8,4 @@ export LIBOS=catnip
 export LD_LIBRARY_PATH=/root/lib:/root/lib/x86_64-linux-gnu
 
 make
-./main --client 10.10.1.2 3000
+./$1 --client 10.10.1.2 3000

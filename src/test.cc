@@ -67,7 +67,7 @@ static void sighandler(int signum)
 static int accept_wait(int qd)
 {
     demi_qtoken_t qt = -1;
-    demi_qresult_t qr = {0};
+    demi_qresult_t qr;
 
     /* Accept a connection. */
     assert(demi_accept(&qt, qd) == 0);
@@ -94,7 +94,7 @@ static int accept_wait(int qd)
 static void connect_wait(int qd, const struct sockaddr_in *saddr)
 {
     demi_qtoken_t qt = -1;
-    demi_qresult_t qr = {0};
+    demi_qresult_t qr;
 
     /* Connect to remote */
     assert(demi_connect(&qt, qd, (const struct sockaddr *)saddr, sizeof(struct sockaddr_in)) == 0);
@@ -187,8 +187,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     /* Run. */
     while (nbytes < MAX_BYTES)
     {
-        demi_qresult_t qr = {0};
-        demi_sgarray_t sga = {0};
+        demi_qresult_t qr;
+        demi_sgarray_t sga;
 
         /* Pop scatter-gather array. */
         pop_wait(qd, &qr);
@@ -236,8 +236,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     /* Run. */
     while (nbytes < MAX_BYTES)
     {
-        demi_qresult_t qr = {0};
-        demi_sgarray_t sga = {0};
+        demi_qresult_t qr;
+        demi_sgarray_t sga;
 
         /* Allocate scatter-gather array. */
         sga = demi_sgaalloc(DATA_SIZE);
@@ -330,7 +330,7 @@ int main(int argc, char *const argv[])
 
     if (argc >= 4)
     {
-        struct sockaddr_in saddr = {0};
+        struct sockaddr_in saddr;
 
         /* Build addresses.*/
         build_sockaddr(argv[2], argv[3], &saddr);
