@@ -83,7 +83,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     std::shared_ptr<arrow::RecordBatch> batch;
     if (reader->ReadNext(&batch).ok() && batch != nullptr) {        
         int64_t num_cols = batch->num_columns();
-        for (int64_t i = 0; i < num_cols; i++) {
+        for (int64_t i = 7; i < 12; i++) {
             std::cout << "Sending column " << i << std::endl;
             std::shared_ptr<arrow::Array> col_arr = batch->column(i);
             arrow::Type::type type = col_arr->type_id();
