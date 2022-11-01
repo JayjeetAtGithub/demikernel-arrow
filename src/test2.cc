@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <chrono>
+#include <thread>
 
 #define DATA_SIZE 1024
 #define MAX_BYTES DATA_SIZE * 1024 * 1024
@@ -116,6 +118,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     }
 
     assert(sent_bytes == MAX_BYTES);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100000));
+
 }
 
 static void usage(const char *const progname)
