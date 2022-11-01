@@ -133,12 +133,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     push_wait(sockqd, &sga, &data_qr);
                     // total_data_bytes_transferred += bytes_to_transfer;
                     demi_sgafree(&sga);
-                }
-            }
-        }
     }
-}
-
 static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
 {
     int nbatches = 0;
