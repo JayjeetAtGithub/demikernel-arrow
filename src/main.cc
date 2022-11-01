@@ -156,19 +156,16 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
     connect_wait(sockqd, remote);
 
-    // while (nbatches <= 10)
-    // {
+    while (true)
+    {
         demi_qresult_t qr;
         demi_sgarray_t sga;
 
-        /* Pop scatter-gather array. */
         pop_wait(sockqd, &qr);
-
-        /* Extract received scatter-gather array. */
         memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
 
         std::cout << sga.sga_segs[0].sgaseg_len << std::endl;
-    // }
+    }
 }
 
 static void usage(const char *progname)
