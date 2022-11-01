@@ -131,10 +131,9 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     demi_sgarray_t sga = demi_sgaalloc(packet_size);
                     
                     memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + offset), packet_size);
-                    // memset(sga.sga_segs[0].sgaseg_buf, 1, 1024);
 
                     demi_qresult_t qr;
-                    std::cout << "Pushing data" << std::endl;
+                    std::cout << "Pushing data: " << bytes_remaining << std::endl;
                     push_wait(qd, &sga, &qr);
                     std::cout << "Pushed data" << std::endl;
 
