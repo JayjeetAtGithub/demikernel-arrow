@@ -79,9 +79,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     demi_qresult_t qr;
     demi_sgarray_t sga;
 
-    /* Pop scatter-gather array. */
-    // pop_wait(qd, &qr);
-
     sga = demi_sgaalloc(2048);
     memset(sga.sga_segs[0].sgaseg_buf, 1, 2048);
     /* Extract received scatter-gather array. */
@@ -95,67 +92,77 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     /* Release received scatter-gather array. */
     assert(demi_sgafree(&sga) == 0);
 
-    // cp::ExecContext exec_ctx;
-    // std::shared_ptr<arrow::RecordBatchReader> reader = ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
 
-    // std::shared_ptr<arrow::RecordBatch> batch;
-    // if (reader->ReadNext(&batch).ok() && batch != nullptr) {
 
-    //     std::cout << batch->ToString() << std::endl;
+
+    cp::ExecContext exec_ctx;
+    std::shared_ptr<arrow::RecordBatchReader> reader = ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
+
+    std::shared_ptr<arrow::RecordBatch> batch;
+    if (reader->ReadNext(&batch).ok() && batch != nullptr) {
+
+        std::cout << batch->ToString() << std::endl;
         
-    //     int64_t num_cols = batch->num_columns();
-    //     for (int64_t i = 0; i < num_cols; i++) {
+        int64_t num_cols = batch->num_columns();
+        for (int64_t i = 0; i < num_cols; i++) {
             
-    //         std::shared_ptr<arrow::Array> col_arr = batch->column(i);
-    //         arrow::Type::type type = col_arr->type_id();
-    //         int64_t null_count = col_arr->null_count();
+            std::shared_ptr<arrow::Array> col_arr = batch->column(i);
+            arrow::Type::type type = col_arr->type_id();
+            int64_t null_count = col_arr->null_count();
 
-    //         if (is_binary_like(type)) {
-    //             std::shared_ptr<arrow::Buffer> data_buff = 
-    //                 std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_data();
-    //             std::shared_ptr<arrow::Buffer> offset_buff = 
-    //                 std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_offsets();
+            if (is_binary_like(type)) {
+                // std::shared_ptr<arrow::Buffer> data_buff = 
+                //     std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_data();
+                // std::shared_ptr<arrow::Buffer> offset_buff = 
+                //     std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_offsets();
 
-    //             int total_data_bytes_transferred = 0;
-    //             int total_data_bytes = data_buff->size();
-    //             while (total_data_bytes_transferred <= total_data_bytes) {
-    //                 demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_data_bytes - total_data_bytes_transferred));
-    //                 memcpy(sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data() + total_data_bytes_transferred, std::min(1024, total_data_bytes - total_data_bytes_transferred));
-    //                 demi_qresult_t data_qr;
-    //                 push_wait(sockqd, &sga, &data_qr);
-    //                 total_data_bytes_transferred += 1024;
-    //                 demi_sgafree(&sga);
-    //             }
+                // int total_data_bytes_transferred = 0;
+                // int total_data_bytes = data_buff->size();
+                // while (total_data_bytes_transferred <= total_data_bytes) {
+                //     demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_data_bytes - total_data_bytes_transferred));
+                //     memcpy(sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data() + total_data_bytes_transferred, std::min(1024, total_data_bytes - total_data_bytes_transferred));
+                //     demi_qresult_t data_qr;
+                //     push_wait(sockqd, &sga, &data_qr);
+                //     total_data_bytes_transferred += 1024;
+                //     demi_sgafree(&sga);
+                // }
 
-    //             int total_offset_bytes_transferred = 0;
-    //             int total_offset_bytes = data_buff->size();
-    //             while (total_data_bytes_transferred <= total_offset_bytes) {
-    //                 demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
-    //                 memcpy(sga.sga_segs[0].sgaseg_buf, (void*)offset_buff->data() + total_offset_bytes_transferred, std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
-    //                 demi_qresult_t data_qr;
-    //                 push_wait(sockqd, &sga, &data_qr);
-    //                 total_offset_bytes_transferred += 1024;
-    //                 demi_sgafree(&sga);
-    //             }
-    //         } else {
-    //             std::shared_ptr<arrow::Buffer> data_buff = 
-    //                 std::static_pointer_cast<arrow::PrimitiveArray>(col_arr)->values();
+                // int total_offset_bytes_transferred = 0;
+                // int total_offset_bytes = data_buff->size();
+                // while (total_data_bytes_transferred <= total_offset_bytes) {
+                //     demi_sgarray_t sga = demi_sgaalloc(std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
+                //     memcpy(sga.sga_segs[0].sgaseg_buf, (void*)offset_buff->data() + total_offset_bytes_transferred, std::min(1024, total_offset_bytes - total_offset_bytes_transferred));
+                //     demi_qresult_t data_qr;
+                //     push_wait(sockqd, &sga, &data_qr);
+                //     total_offset_bytes_transferred += 1024;
+                //     demi_sgafree(&sga);
+                // }
+            } else {
+                std::shared_ptr<arrow::Buffer> data_buff = 
+                    std::static_pointer_cast<arrow::PrimitiveArray>(col_arr)->values();
                 
-    //             int total_data_bytes_transferred = 0;
-    //             int total_data_bytes = data_buff->size();
-    //             while (total_data_bytes_transferred <= total_data_bytes) {
-    //                 std::cout << "..." << std::endl;
-    //                 int bytes_to_transfer = std::min(1024, total_data_bytes - total_data_bytes_transferred);
-                    // demi_sgarray_t sga = demi_sgaalloc(1024);
-                    
-                    // memcpy(sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data() + total_data_bytes_transferred, bytes_to_transfer);
-                    // memset(sga.sga_segs[0].sgaseg_buf, 1, 1024);
+                int offset = 0;
+                int bytes_remaining = data_buff->size();
+                while (bytes_remaining > 0) {
 
-                    // demi_qresult_t data_qr;
-                    // push_wait(sockqd, &sga, &data_qr);
-                    // total_data_bytes_transferred += bytes_to_transfer;
-                    // demi_sgafree(&sga);
+                    int packet_size = std::min(1024, bytes_remaining);
+                    demi_sgarray_t sga = demi_sgaalloc(packet_size);
+                    
+                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + offset), packet_size);
+
+                    demi_qresult_t data_qr;
+                    push_wait(sockqd, &sga, &data_qr);
+
+                    bytes_remaining -= packet_size;
+                    offset += packet_size;
+ 
+                    assert(demi_sgafree(&sga) == 0);
+                }
+            }
+        }
     }
+}
+
 static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
 {
     int nbatches = 0;
