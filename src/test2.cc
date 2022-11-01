@@ -52,13 +52,14 @@ static void connect_wait(int qd, const struct sockaddr_in *saddr)
     assert(qr.qr_opcode == DEMI_OPC_CONNECT);
 }
 
-static void push_wait(int qd, demi_sgarray_t *sga, demi_qresult_t *qr)
+// static void push_wait(int qd, demi_sgarray_t *sga, demi_qresult_t *qr)
+static void push_wait(int qd, demi_sgarray_t *sga)
 {
     demi_qtoken_t qt = -1;
     assert(demi_push(&qt, qd, sga) == 0);
-    assert(demi_wait(qr, qt) == 0);
-    fprintf(stdout, "push_wait: (%d)\n", qr->qr_opcode);
-    assert(qr->qr_opcode == DEMI_OPC_PUSH);
+    // assert(demi_wait(qr, qt) == 0);
+    // fprintf(stdout, "push_wait: (%d)\n", qr->qr_opcode);
+    // assert(qr->qr_opcode == DEMI_OPC_PUSH);
 }
 
 static void pop_wait(int qd, demi_qresult_t *qr)
@@ -97,7 +98,7 @@ static void server(int argc, char *const argv[], const struct sockaddr_in *local
 static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
 {
     int sockqd = -1;
-    demi_qresult_t qr;
+    // demi_qresult_t qr;
     assert(demi_init(argc, argv) == 0);
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
     connect_wait(sockqd, remote);
@@ -108,7 +109,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         demi_sgarray_t sga;
         sga = demi_sgaalloc(DATA_SIZE);
         memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
-        push_wait(sockqd, &sga, &qr);
+        // push_wait(sockqd, &sga, &qr);
+        push_wait(sockqd, &sga);
         fprintf(stdout, "push: total bytes sent: (%ld)\n", sent_bytes);
         sent_bytes += sga.sga_segs[0].sgaseg_len;
     }
