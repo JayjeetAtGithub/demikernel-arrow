@@ -76,21 +76,20 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
 
 
-    demi_qresult_t qr;
-    demi_sgarray_t sga;
+    // demi_sgarray_t sga;
 
-    sga = demi_sgaalloc(2048);
-    memset(sga.sga_segs[0].sgaseg_buf, 1, 2048);
+    // sga = demi_sgaalloc(2048);
+    // memset(sga.sga_segs[0].sgaseg_buf, 1, 2048);
     /* Extract received scatter-gather array. */
     // memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
 
     // nbytes += sga.sga_segs[0].sgaseg_len;
 
     /* Push scatter-gather array. */
-    push_wait(qd, &sga, &qr);
+    // push_wait(qd, &sga, &qr);
 
     /* Release received scatter-gather array. */
-    assert(demi_sgafree(&sga) == 0);
+    // assert(demi_sgafree(&sga) == 0);
 
 
 
@@ -150,8 +149,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     
                     memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + offset), packet_size);
 
-                    demi_qresult_t data_qr;
-                    push_wait(sockqd, &sga, &data_qr);
+                    demi_qresult_t qr;
+                    push_wait(sockqd, &sga, &qr);
 
                     bytes_remaining -= packet_size;
                     offset += packet_size;
