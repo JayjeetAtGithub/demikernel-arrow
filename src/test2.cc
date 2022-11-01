@@ -106,15 +106,15 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     connect_wait(sockqd, remote);
 
     int64_t sent_bytes = 0;
-    while (sent_bytes <= MAX_BYTES)
+    while (sent_bytes < MAX_BYTES)
     {
         demi_sgarray_t sga;
         sga = demi_sgaalloc(DATA_SIZE);
         memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
         // push_wait(sockqd, &sga, &qr);
         push_wait(sockqd, &sga);
-        fprintf(stdout, "push: total bytes sent: (%ld)\n", sent_bytes);
         sent_bytes += sga.sga_segs[0].sgaseg_len;
+        fprintf(stdout, "push: total bytes sent: (%ld)\n", sent_bytes);
     }
 
     assert(sent_bytes == MAX_BYTES);
