@@ -76,40 +76,23 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
 
 
-    // demi_sgarray_t sga;
 
-    // sga = demi_sgaalloc(2048);
-    // memset(sga.sga_segs[0].sgaseg_buf, 1, 2048);
-    /* Extract received scatter-gather array. */
-    // memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
+    // cp::ExecContext exec_ctx;
+    // std::shared_ptr<arrow::RecordBatchReader> reader = ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
 
-    // nbytes += sga.sga_segs[0].sgaseg_len;
+    // std::shared_ptr<arrow::RecordBatch> batch;
+    // if (reader->ReadNext(&batch).ok() && batch != nullptr) {
 
-    /* Push scatter-gather array. */
-    // push_wait(qd, &sga, &qr);
-
-    /* Release received scatter-gather array. */
-    // assert(demi_sgafree(&sga) == 0);
-
-
-
-
-    cp::ExecContext exec_ctx;
-    std::shared_ptr<arrow::RecordBatchReader> reader = ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
-
-    std::shared_ptr<arrow::RecordBatch> batch;
-    if (reader->ReadNext(&batch).ok() && batch != nullptr) {
-
-        std::cout << batch->ToString() << std::endl;
+    //     std::cout << batch->ToString() << std::endl;
         
-        int64_t num_cols = batch->num_columns();
-        for (int64_t i = 0; i < num_cols; i++) {
+    //     int64_t num_cols = batch->num_columns();
+    //     for (int64_t i = 0; i < num_cols; i++) {
             
-            std::shared_ptr<arrow::Array> col_arr = batch->column(i);
-            arrow::Type::type type = col_arr->type_id();
-            int64_t null_count = col_arr->null_count();
+    //         std::shared_ptr<arrow::Array> col_arr = batch->column(i);
+    //         arrow::Type::type type = col_arr->type_id();
+    //         int64_t null_count = col_arr->null_count();
 
-            if (is_binary_like(type)) {
+            // if (is_binary_like(type)) {
                 // std::shared_ptr<arrow::Buffer> data_buff = 
                 //     std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_data();
                 // std::shared_ptr<arrow::Buffer> offset_buff = 
@@ -136,16 +119,16 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 //     total_offset_bytes_transferred += 1024;
                 //     demi_sgafree(&sga);
                 // }
-            } else {
-                std::shared_ptr<arrow::Buffer> data_buff = 
-                    std::static_pointer_cast<arrow::PrimitiveArray>(col_arr)->values();
+            // } else {
+                // std::shared_ptr<arrow::Buffer> data_buff = 
+                //     std::static_pointer_cast<arrow::PrimitiveArray>(col_arr)->values();
                 
-                int offset = 0;
-                int bytes_remaining = data_buff->size();
-                while (bytes_remaining > 0) {
+                // int offset = 0;
+                // int bytes_remaining = data_buff->size();
+                // while (bytes_remaining > 0) {
 
-                    int packet_size = std::min(1024, bytes_remaining);
-                    demi_sgarray_t sga = demi_sgaalloc(packet_size);
+                    // int packet_size = std::min(1024, bytes_remaining);
+                    demi_sgarray_t sga = demi_sgaalloc(1024);
                     
                     // memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + offset), packet_size);
                     memset(sga.sga_segs[0].sgaseg_buf, 1, 1024);
@@ -153,15 +136,15 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     demi_qresult_t qr;
                     push_wait(sockqd, &sga, &qr);
 
-                    bytes_remaining -= packet_size;
-                    offset += packet_size;
+                    // bytes_remaining -= packet_size;
+                    // offset += packet_size;
  
                     assert(demi_sgafree(&sga) == 0);
                 }
-            }
-        }
-    }
-}
+            // }
+//         }
+//     }
+// }
 
 static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
 {
