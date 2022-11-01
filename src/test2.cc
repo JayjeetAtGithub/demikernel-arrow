@@ -22,6 +22,7 @@ static void sighandler(int signum)
 
     fprintf(stderr, "\nReceived %s signal\n", signame);
     fprintf(stderr, "Exiting...\n");
+
     exit(EXIT_SUCCESS);
 }
 
@@ -32,88 +33,81 @@ void reg_sighandlers()
     signal(SIGTSTP, sighandler);
 }
 
-static int accept_get_newsockqd(struct sockaddr_in *addr)
+static int accept_wait(int qd)
 {
+    demi_qtoken_t qt = -1;
+    demi_qresult_t qr ;
+    assert(demi_accept(&qt, qd) == 0);
+    assert(demi_wait(&qr, qt) == 0);
+    assert(qr.qr_opcode == DEMI_OPC_ACCEPT);
+    return (qr.qr_value.ares.qd);
+}
+
+static void connect_wait(int qd, const struct sockaddr_in *saddr)
+{
+    demi_qtoken_t qt = -1;
+    demi_qresult_t qr ;
+    assert(demi_connect(&qt, qd, (const struct sockaddr *)saddr, sizeof(struct sockaddr_in)) == 0);
+    assert(demi_wait(&qr, qt) == 0);
+    assert(qr.qr_opcode == DEMI_OPC_CONNECT);
+}
+
+static void push_wait(int qd, demi_sgarray_t *sga, demi_qresult_t *qr)
+{
+    demi_qtoken_t qt = -1;
+    assert(demi_push(&qt, qd, sga) == 0);
+    assert(demi_wait(qr, qt) == 0);
+    assert(qr->qr_opcode == DEMI_OPC_PUSH);
+}
+
+static void pop_wait(int qd, demi_qresult_t *qr)
+{
+    demi_qtoken_t qt = -1;
+    assert(demi_pop(&qt, qd) == 0);
+    assert(demi_wait(qr, qt) == 0);
+    assert(qr->qr_opcode == DEMI_OPC_POP);
+    assert(qr->qr_value.sga.sga_segs != 0);
+}
+
+static void run_server(int argc, char *const argv[], const struct sockaddr_in *local)
+{
+    int qd = -1;
     int sockqd = -1;
-    demi_qtoken_t tok = -1;
-    demi_qresult_t res;
+    demi_qresult_t qr;
 
+    assert(demi_init(argc, argv) == 0);
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
-    assert(demi_bind(sockqd, (const struct sockaddr *)addr, sizeof(struct sockaddr_in)) == 0);
+    assert(demi_bind(sockqd, (const struct sockaddr *)local, sizeof(struct sockaddr_in)) == 0);
     assert(demi_listen(sockqd, 16) == 0);
-    assert(demi_accept(&tok, sockqd) == 0);
-    assert(demi_wait(&res, tok) == 0);
-    assert(res.qr_opcode == DEMI_OPC_ACCEPT);
-    return res.qr_value.ares.qd;
-}
+    qd = accept_wait(sockqd);
 
-static int pop_get_received_nbytes(int sockqd)
-{
-    demi_qresult_t res;
-    demi_qtoken_t tok = -1;
-    int recv_bytes = 0;
-
-    assert(demi_pop(&tok, sockqd) == 0);
-    assert(demi_wait(&res, tok) == 0);
-    assert(res.qr_opcode == DEMI_OPC_POP);
-    assert(res.qr_value.sga.sga_segs != 0);
-    recv_bytes = res.qr_value.sga.sga_segs[0].sgaseg_len;
-    assert(demi_sgafree(&res.qr_value.sga) == 0);
-    return recv_bytes;
-}
-
-static void run_server(struct sockaddr_in *addr)
-{
     unsigned int recv_bytes = 0;
-    int sockqd = accept_get_newsockqd(addr);
 
     while (recv_bytes < MAX_BYTES)
     {
-        recv_bytes += pop_get_received_nbytes(sockqd);
+        demi_sgarray_t sga;
+        recv_bytes += pop_wait(qd, &qr);
         fprintf(stdout, "pop: total bytes received: (%d)\n", recv_bytes);
+        assert(demi_sgafree(&sga) == 0);
     }
 
     assert(recv_bytes == MAX_BYTES);
 }
 
-static int connect_get_sockqd(const struct sockaddr_in *const addr)
+static void run_client(int argc, char *const argv[], const struct sockaddr_in *remote)
 {
     int sockqd = -1;
-    demi_qtoken_t tok = -1;
-    demi_qresult_t res;
-
+    demi_qresult_t qr;
+    assert(demi_init(argc, argv) == 0);
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
-    assert(demi_connect(&tok, sockqd, (const struct sockaddr *)addr, sizeof(struct sockaddr_in)) == 0);
-    assert(demi_wait(&res, tok) == 0);
-    assert(res.qr_opcode == DEMI_OPC_CONNECT);
-    return sockqd;
-}
+    connect_wait(sockqd, remote);
 
-static int push_get_sent_nbytes(const struct sockaddr_in *const addr, const int sockqd)
-{
-    demi_qtoken_t tok = -1;
-    demi_qresult_t res;
-    demi_sgarray_t sga = demi_sgaalloc(DATA_SIZE);
-    int sent_bytes = 0;
-
-    assert(sga.sga_segs != 0);
-    memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
-    assert(demi_pushto(&tok, sockqd, &sga, (const struct sockaddr *)addr, sizeof(struct sockaddr_in)) == 0);
-    assert(demi_wait(&res, tok) == 0);
-    assert(res.qr_opcode == DEMI_OPC_PUSH);
-    sent_bytes = sga.sga_segs[0].sgaseg_len;
-    assert(demi_sgafree(&sga) == 0);
-    return sent_bytes;
-}
-
-static void run_client(const struct sockaddr_in *const addr)
-{
     unsigned int sent_bytes = 0;
-    int sockqd = connect_get_sockqd(addr);
-
     while (sent_bytes < MAX_BYTES)
     {
-        sent_bytes += push_get_sent_nbytes(addr, sockqd);
+        sga = demi_sgaalloc(DATA_SIZE);
+        memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
+        sent_bytes += push_wait(sockqd, &sga, &qr);
         fprintf(stdout, "push: total bytes sent: (%d)\n", sent_bytes);
     }
 
@@ -128,7 +122,7 @@ static void usage(const char *const progname)
     fprintf(stderr, "  --server    Run in server mode.\n");
 }
 
-void build_addr(const char *const ip_str, const char *const port_str, struct sockaddr_in *const addr)
+void build_sockaddr(const char *const ip_str, const char *const port_str, struct sockaddr_in *const addr)
 {
     int port = -1;
 
@@ -141,33 +135,30 @@ void build_addr(const char *const ip_str, const char *const port_str, struct soc
 // Exercises a one-way direction communication through TCP. This system-level test instantiates two demikernel peers: a
 // client and a server. The client sends TCP packets to the server in a tight loop. The server process is a tight loop
 // received TCP packets from the client.
-int main(int argc, const char *argv[])
+int main(int argc, char *const argv[])
 {
-    struct sockaddr_in addr;
+    /* Install signal handlers. */
+    signal(SIGINT, sighandler);
+    signal(SIGQUIT, sighandler);
+    signal(SIGTSTP, sighandler);
 
-    if (argc != 4)
+    if (argc >= 4)
     {
-        usage(argv[0]);
-        return (EXIT_FAILURE);
+        struct sockaddr_in saddr;
+
+        /* Build addresses.*/
+        build_sockaddr(argv[2], argv[3], &saddr);
+
+        /* Run. */
+        if (!strcmp(argv[1], "--server"))
+            server(argc, argv, &saddr);
+        else if (!strcmp(argv[1], "--client"))
+            client(argc, argv, &saddr);
+
+        return (EXIT_SUCCESS);
     }
 
-    reg_sighandlers();
-    assert(demi_init(argc, (char **)argv) == 0);
-    build_addr(argv[2], argv[3], &addr);
-
-    if (!strcmp(argv[1], "--server"))
-    {
-        run_server(&addr);
-    }
-    else if (!strcmp(argv[1], "--client"))
-    {
-        run_client(&addr);
-    }
-    else
-    {
-        usage(argv[0]);
-        return (EXIT_FAILURE);
-    }
+    usage(argv[0]);
 
     return (EXIT_SUCCESS);
 }
