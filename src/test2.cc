@@ -140,9 +140,6 @@ void build_sockaddr(const char *const ip_str, const char *const port_str, struct
     assert(inet_pton(AF_INET, ip_str, &addr->sin_addr) == 1);
 }
 
-// Exercises a one-way direction communication through TCP. This system-level test instantiates two demikernel peers: a
-// client and a server. The client sends TCP packets to the server in a tight loop. The server process is a tight loop
-// received TCP packets from the client.
 int main(int argc, char *const argv[])
 {
     /* Install signal handlers. */
