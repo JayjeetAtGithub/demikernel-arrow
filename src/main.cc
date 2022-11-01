@@ -73,6 +73,28 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
     qd = accept_wait(sockqd);
 
+
+
+
+    demi_qresult_t qr;
+    demi_sgarray_t sga;
+
+    /* Pop scatter-gather array. */
+    pop_wait(qd, &qr);
+
+    demi_sgarray_t sga = demi_sgaalloc(1024);
+    memset(sga.sga_segs[0].sgaseg_buf, 1, 1024);
+    /* Extract received scatter-gather array. */
+    // memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
+
+    // nbytes += sga.sga_segs[0].sgaseg_len;
+
+    /* Push scatter-gather array. */
+    push_wait(qd, &sga, &qr);
+
+    /* Release received scatter-gather array. */
+    assert(demi_sgafree(&sga) == 0);
+
     // cp::ExecContext exec_ctx;
     // std::shared_ptr<arrow::RecordBatchReader> reader = ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
 
@@ -124,15 +146,15 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     //             while (total_data_bytes_transferred <= total_data_bytes) {
     //                 std::cout << "..." << std::endl;
     //                 int bytes_to_transfer = std::min(1024, total_data_bytes - total_data_bytes_transferred);
-                    demi_sgarray_t sga = demi_sgaalloc(1024);
+                    // demi_sgarray_t sga = demi_sgaalloc(1024);
                     
                     // memcpy(sga.sga_segs[0].sgaseg_buf, (void*)data_buff->data() + total_data_bytes_transferred, bytes_to_transfer);
-                    memset(sga.sga_segs[0].sgaseg_buf, 1, 1024);
+                    // memset(sga.sga_segs[0].sgaseg_buf, 1, 1024);
 
-                    demi_qresult_t data_qr;
-                    push_wait(sockqd, &sga, &data_qr);
+                    // demi_qresult_t data_qr;
+                    // push_wait(sockqd, &sga, &data_qr);
                     // total_data_bytes_transferred += bytes_to_transfer;
-                    demi_sgafree(&sga);
+                    // demi_sgafree(&sga);
     }
 static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
 {
