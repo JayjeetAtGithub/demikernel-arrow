@@ -57,7 +57,7 @@ static void push_wait(int qd, demi_sgarray_t *sga, demi_qresult_t *qr)
     demi_qtoken_t qt = -1;
     assert(demi_push(&qt, qd, sga) == 0);
     assert(demi_wait(qr, qt) == 0);
-    std::cout << "push_wait: " << qr->qr_opcode << std::endl;
+    fprintf(stdout, "push_wait: ", qr->qr_opcode);
     assert(qr->qr_opcode == DEMI_OPC_PUSH);
 }
 
