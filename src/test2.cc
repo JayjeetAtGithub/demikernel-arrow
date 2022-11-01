@@ -13,8 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DATA_SIZE 64
-#define MAX_BYTES DATA_SIZE * 1024 * 200
+#define DATA_SIZE 1024
+#define MAX_BYTES DATA_SIZE * 1024
 
 static void sighandler(int signum)
 {
