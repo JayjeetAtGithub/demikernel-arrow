@@ -80,7 +80,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     demi_sgarray_t sga;
 
     /* Pop scatter-gather array. */
-    pop_wait(qd, &qr);
+    // pop_wait(qd, &qr);
 
     sga = demi_sgaalloc(1024);
     memset(sga.sga_segs[0].sgaseg_buf, 1, 1024);
@@ -172,6 +172,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
 
         memset(&qr, 0, sizeof(demi_qresult_t));
         pop_wait(sockqd, &qr);
+
         demi_sgafree(&qr.qr_value.sga);
 
         // nbatches += 1;
