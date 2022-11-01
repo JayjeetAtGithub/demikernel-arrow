@@ -82,8 +82,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     /* Pop scatter-gather array. */
     // pop_wait(qd, &qr);
 
-    sga = demi_sgaalloc(1024*1024);
-    memset(sga.sga_segs[0].sgaseg_buf, 1, 1024*1024);
+    sga = demi_sgaalloc(2048);
+    memset(sga.sga_segs[0].sgaseg_buf, 1, 2048);
     /* Extract received scatter-gather array. */
     // memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
 
