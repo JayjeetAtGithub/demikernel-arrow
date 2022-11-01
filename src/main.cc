@@ -73,10 +73,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
     qd = accept_wait(sockqd);
 
-
-
-
-
     cp::ExecContext exec_ctx;
     std::shared_ptr<arrow::RecordBatchReader> reader = ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
 
@@ -160,8 +156,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
 
         pop_wait(sockqd, &qr);
         memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
-
         std::cout << sga.sga_segs[0].sgaseg_len << std::endl;
+        assert(demi_sgafree(&sga) == 0);
     }
 }
 
