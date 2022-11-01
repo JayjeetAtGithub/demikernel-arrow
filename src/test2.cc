@@ -87,7 +87,7 @@ static void server(int argc, char *const argv[], const struct sockaddr_in *local
 
     int64_t recv_bytes = 0;
 
-    while (recv_bytes <= MAX_BYTES)
+    while (recv_bytes < MAX_BYTES)
     {
         pop_wait(qd, &qr);
         fprintf(stdout, "pop: total bytes received: (%ld)\n", recv_bytes);
