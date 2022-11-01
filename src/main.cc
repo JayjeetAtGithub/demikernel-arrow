@@ -155,7 +155,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     while (true)
     {
         demi_qresult_t qr;
-        demi_sgarray_t sga;
+        demi_sgarray_t sga = demi_sgaalloc(1024);
 
         pop_wait(sockqd, &qr);
         memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
