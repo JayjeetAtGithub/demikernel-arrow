@@ -86,6 +86,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
             int64_t null_count = col_arr->null_count();
 
             if (is_binary_like(type)) {
+                std::cout << "binary type" << std::endl;
                 std::shared_ptr<arrow::Buffer> data_buff = 
                     std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_data();
                 std::shared_ptr<arrow::Buffer> offset_buff = 
@@ -120,6 +121,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     assert(demi_sgafree(&sga) == 0);
                 }
             } else {
+                std::cout << "primitive type" << std::endl;
                 std::shared_ptr<arrow::Buffer> data_buff = 
                     std::static_pointer_cast<arrow::PrimitiveArray>(col_arr)->values();
                 
