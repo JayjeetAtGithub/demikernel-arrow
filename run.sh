@@ -4,8 +4,8 @@ set -ex
 export CONFIG_PATH=/users/noobjc/demikernel/client.yaml
 export MTU=1500
 export MSS=1500
-export LIBOS=$2
+export LIBOS=$3
 export LD_LIBRARY_PATH=/root/lib:/root/lib/x86_64-linux-gnu
 
 make
-./$1 --client 10.10.1.2 3000
+./$2 --$1 10.10.1.2 3000
