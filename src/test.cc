@@ -26,12 +26,12 @@
 /**
  * @brief Data size.
  */
-#define DATA_SIZE 64
+#define DATA_SIZE 1024
 
 /**
  * @brief Maximum number of bytes to transfer.
  */
-#define MAX_BYTES (DATA_SIZE * 1024)
+#define MAX_BYTES (DATA_SIZE * 1024 * 1024)
 
 /*====================================================================================================================*
  * sighandler()                                                                                                       *
