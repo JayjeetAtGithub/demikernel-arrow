@@ -236,8 +236,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     /* Run. */
     while (nbytes < MAX_BYTES)
     {
-        demi_qresult_t qr = {0};
-        demi_sgarray_t sga = {0};
+        demi_qresult_t qr;
+        demi_sgarray_t sga;
 
         /* Allocate scatter-gather array. */
         sga = demi_sgaalloc(DATA_SIZE);
