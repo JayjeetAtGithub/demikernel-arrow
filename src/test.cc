@@ -146,6 +146,7 @@ static void pop_wait(int qd, demi_qresult_t *qr)
 static void server(int argc, char *const argv[], struct sockaddr_in *local)
 {
     int qd = -1;
+    int nbytes = 0;
     int sockqd = -1;
 
     assert(demi_init(argc, argv) == 0);
