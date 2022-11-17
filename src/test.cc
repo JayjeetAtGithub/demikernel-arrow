@@ -169,8 +169,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     push_wait(qd, &sga, &qr);
 
     assert(demi_sgafree(&sga) == 0);
-
-    fprintf(stdout, "ping (%d)\n", nbytes);
 }
 
 /*====================================================================================================================*
