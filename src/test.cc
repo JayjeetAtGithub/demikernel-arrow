@@ -104,7 +104,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         assert(sga.sga_segs != 0);
 
         /* Cook request data. */
-        memset(sga.sga_segs[0].sgaseg_buf, "a", DATA_SIZE);
+        memcpy(sga.sga_segs[0].sgaseg_buf, "a", 1);
 
         /* Push scatter-gather array. */
         push_wait(sockqd, &sga, &qr);
