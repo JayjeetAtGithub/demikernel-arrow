@@ -146,46 +146,31 @@ static void pop_wait(int qd, demi_qresult_t *qr)
 static void server(int argc, char *const argv[], struct sockaddr_in *local)
 {
     int qd = -1;
-    int nbytes = 0;
     int sockqd = -1;
 
-    /* Initialize demikernel */
     assert(demi_init(argc, argv) == 0);
 
-    /* Setup local socket. */
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
     assert(demi_bind(sockqd, (const struct sockaddr *)local, sizeof(struct sockaddr_in)) == 0);
     assert(demi_listen(sockqd, 16) == 0);
 
-    /* Accept client . */
     qd = accept_wait(sockqd);
 
-    /* Run. */
-    while (nbytes < MAX_BYTES)
-    {
-        demi_qresult_t qr;
-        demi_sgarray_t sga;
+    demi_qresult_t qr;
+    demi_sgarray_t sga;
 
-        /* Pop scatter-gather array. */
-        pop_wait(qd, &qr);
+    pop_wait(qd, &qr);
 
-        /* Allocate scatter-gather array. */
-        sga = demi_sgaalloc(DATA_SIZE);
-        assert(sga.sga_segs != 0);
+    sga = demi_sgaalloc(DATA_SIZE);
+    assert(sga.sga_segs != 0);
 
-        /* Cook response data. */
-        memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
+    memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
 
-        nbytes += DATA_SIZE;
+    push_wait(qd, &sga, &qr);
 
-        /* Push scatter-gather array. */
-        push_wait(qd, &sga, &qr);
+    assert(demi_sgafree(&sga) == 0);
 
-        /* Release received scatter-gather array. */
-        assert(demi_sgafree(&sga) == 0);
-
-        fprintf(stdout, "ping (%d)\n", nbytes);
-    }
+    fprintf(stdout, "ping (%d)\n", nbytes);
 }
 
 /*====================================================================================================================*
