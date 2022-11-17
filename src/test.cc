@@ -1,12 +1,4 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-
-/* This should come first. */
 #define _POSIX_C_SOURCE 200809L
-
-/*====================================================================================================================*
- * Imports                                                                                                            *
- *====================================================================================================================*/
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -19,13 +11,6 @@
 #include <string.h>
 #include <sys/socket.h>
 
-/*====================================================================================================================*
- * Constants                                                                                                          *
- *====================================================================================================================*/
-
-/**
- * @brief Data size.
- */
 #define DATA_SIZE 1024
 
 /**
@@ -33,15 +18,6 @@
  */
 #define MAX_BYTES (DATA_SIZE * 1024 * 1024)
 
-/*====================================================================================================================*
- * sighandler()                                                                                                       *
- *====================================================================================================================*/
-
-/**
- * @brief Signal handler.
- *
- * @param signum Number of received signal.
- */
 static void sighandler(int signum)
 {
     const char *signame = strsignal(signum);
@@ -193,8 +169,12 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
         /* Pop scatter-gather array. */
         pop_wait(qd, &qr);
 
-        /* Extract received scatter-gather array. */
-        memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
+        /* Allocate scatter-gather array. */
+        sga = demi_sgaalloc(DATA_SIZE);
+        assert(sga.sga_segs != 0);
+
+        /* Cook request data. */
+        memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
 
         nbytes += sga.sga_segs[0].sgaseg_len;
 
@@ -243,7 +223,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         sga = demi_sgaalloc(DATA_SIZE);
         assert(sga.sga_segs != 0);
 
-        /* Cook data. */
+        /* Cook request data. */
         memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
 
         /* Push scatter-gather array. */
