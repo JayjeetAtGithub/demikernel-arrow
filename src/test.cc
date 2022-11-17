@@ -54,7 +54,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
         char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
         std::cout << "Received request: " << req << std::endl;
 
-        if (req == "a") {
+        if (req == 'a') {
             s = reader->ReadNext(&batch);
             if (!s.ok() || batch == nullptr) {
                 sga = demi_sgaalloc(10);
@@ -64,16 +64,16 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
             } else {
                 respond_ok(qd); 
             }
-        } else if (req == "b") {
+        } else if (req == 'b') {
             
         }
 
-        demi_sgarray_t sga = demi_sgaalloc(DATA_SIZE);
-        assert(sga.sga_segs != 0);
-        memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
+        // demi_sgarray_t sga = demi_sgaalloc(DATA_SIZE);
+        // assert(sga.sga_segs != 0);
+        // memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
 
-        push_wait(qd, &sga, &qr);
-        assert(demi_sgafree(&sga) == 0);
+        // push_wait(qd, &sga, &qr);
+        // assert(demi_sgafree(&sga) == 0);
     }
 
 
@@ -119,7 +119,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     connect_wait(sockqd, remote);
 
     /* Run. */
-    while (nbytes < MAX_BYTES)
+    while (nbytes < 1024*1024)
     {
         demi_qresult_t qr;
         demi_sgarray_t sga;
