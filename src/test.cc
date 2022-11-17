@@ -156,20 +156,26 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
     qd = accept_wait(sockqd);
 
-    while (true) {
-        demi_qresult_t qr;
-        demi_sgarray_t sga;
+    while (nbytes < MAX_BYTES)
+    {
+        demi_qresult_t qr = {0};
+        demi_sgarray_t sga = {0};
 
+        /* Pop scatter-gather array. */
         pop_wait(qd, &qr);
 
-        sga = demi_sgaalloc(DATA_SIZE);
-        assert(sga.sga_segs != 0);
+        /* Extract received scatter-gather array. */
+        memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
 
-        memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
+        nbytes += sga.sga_segs[0].sgaseg_len;
 
+        /* Push scatter-gather array. */
         push_wait(qd, &sga, &qr);
 
+        /* Release received scatter-gather array. */
         assert(demi_sgafree(&sga) == 0);
+
+        fprintf(stdout, "ping (%d)\n", nbytes);
     }
 }
 
