@@ -1,148 +1,11 @@
 #define _POSIX_C_SOURCE 200809L
 
-#include <arpa/inet.h>
-#include <assert.h>
-#include <demi/libos.h>
-#include <demi/sga.h>
-#include <demi/wait.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
+#include <iostream>
 
-#define DATA_SIZE 1024
+#include "utils.h"
 
-/**
- * @brief Maximum number of bytes to transfer.
- */
 #define MAX_BYTES (DATA_SIZE * 1024)
 
-static void sighandler(int signum)
-{
-    const char *signame = strsignal(signum);
-
-    fprintf(stderr, "\nReceived %s signal\n", signame);
-    fprintf(stderr, "Exiting...\n");
-
-    exit(EXIT_SUCCESS);
-}
-
-/*====================================================================================================================*
- * accept_wait()                                                                                                      *
- *====================================================================================================================*/
-
-/**
- * @brief Accepts a connection on a socket and waits for operation to complete.
- *
- * @param qd Target queue descriptor.
- *
- * @returns On successful completion, a queue descriptor for an accepted connection is returned. On failure, this
- * function aborts the program execution.
- */
-static int accept_wait(int qd)
-{
-    demi_qtoken_t qt = -1;
-    demi_qresult_t qr;
-
-    /* Accept a connection. */
-    assert(demi_accept(&qt, qd) == 0);
-
-    /* Wait for operation to complete. */
-    assert(demi_wait(&qr, qt) == 0);
-
-    /* Parse operation result. */
-    assert(qr.qr_opcode == DEMI_OPC_ACCEPT);
-
-    return (qr.qr_value.ares.qd);
-}
-
-/*====================================================================================================================*
- * connect_wait()                                                                                                     *
- *====================================================================================================================*/
-
-/**
- * @brief Connects to a remote socket and waits for operation to complete.
- *
- * @param qd    Target queue descriptor.
- * @param saddr Remote socket address.
- */
-static void connect_wait(int qd, const struct sockaddr_in *saddr)
-{
-    demi_qtoken_t qt = -1;
-    demi_qresult_t qr;
-
-    /* Connect to remote */
-    assert(demi_connect(&qt, qd, (const struct sockaddr *)saddr, sizeof(struct sockaddr_in)) == 0);
-
-    /* Wait for operation to complete. */
-    assert(demi_wait(&qr, qt) == 0);
-
-    /* Parse operation result. */
-    assert(qr.qr_opcode == DEMI_OPC_CONNECT);
-}
-
-/*====================================================================================================================*
- * push_wait()                                                                                                        *
- *====================================================================================================================*/
-
-/**
- * @brief Pushes a scatter-gather array to a remote socket and waits for operation to complete.
- *
- * @param qd  Target queue descriptor.
- * @param sga Target scatter-gather array.
- * @param qr  Storage location for operation result.
- */
-static void push_wait(int qd, demi_sgarray_t *sga, demi_qresult_t *qr)
-{
-    demi_qtoken_t qt = -1;
-
-    /* Push data. */
-    assert(demi_push(&qt, qd, sga) == 0);
-
-    /* Wait push operation to complete. */
-    assert(demi_wait(qr, qt) == 0);
-
-    /* Parse operation result. */
-    assert(qr->qr_opcode == DEMI_OPC_PUSH);
-}
-
-/*====================================================================================================================*
- * pop_wait()                                                                                                         *
- *====================================================================================================================*/
-
-/**
- * @brief Pops a scatter-gather array and waits for operation to complete.
- *
- * @param qd Target queue descriptor.
- * @param qr Storage location for operation result.
- */
-static void pop_wait(int qd, demi_qresult_t *qr)
-{
-    demi_qtoken_t qt = -1;
-
-    /* Pop data. */
-    assert(demi_pop(&qt, qd) == 0);
-
-    /* Wait for pop operation to complete. */
-    assert(demi_wait(qr, qt) == 0);
-
-    /* Parse operation result. */
-    assert(qr->qr_opcode == DEMI_OPC_POP);
-    assert(qr->qr_value.sga.sga_segs != 0);
-}
-
-/*====================================================================================================================*
- * server()                                                                                                           *
- *====================================================================================================================*/
-
-/**
- * @brief TCP echo server.
- *
- * @param argc  Argument count.
- * @param argv  Argument list.
- * @param local Local socket address.
- */
 static void server(int argc, char *const argv[], struct sockaddr_in *local)
 {
     int qd = -1;
@@ -184,17 +47,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     }
 }
 
-/*====================================================================================================================*
- * client()                                                                                                           *
- *====================================================================================================================*/
-
-/**
- * @brief TCP echo client.
- *
- * @param argc   Argument count.
- * @param argv   Argument list.
- * @param remote Remote socket address.
- */
 static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
 {
     int nbytes = 0;
@@ -244,59 +96,6 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     }
 }
 
-/*====================================================================================================================*
- * usage()                                                                                                            *
- *====================================================================================================================*/
-
-/**
- * @brief Prints program usage.
- *
- * @param progname Program name.
- */
-static void usage(const char *progname)
-{
-    fprintf(stderr, "Usage: %s MODE ipv4-address port\n", progname);
-    fprintf(stderr, "MODE:\n");
-    fprintf(stderr, "  --client    Run in client mode.\n");
-    fprintf(stderr, "  --server    Run in server mode.\n");
-}
-
-/*====================================================================================================================*
- * build_sockaddr()                                                                                                   *
- *====================================================================================================================*/
-
-/**
- * @brief Builds a socket address.
- *
- * @param ip_str    String representation of an IP address.
- * @param port_str  String representation of a port number.
- * @param addr      Storage location for socket address.
- */
-void build_sockaddr(const char *const ip_str, const char *const port_str, struct sockaddr_in *const addr)
-{
-    int port = -1;
-
-    sscanf(port_str, "%d", &port);
-    addr->sin_family = AF_INET;
-    addr->sin_port = htons(port);
-    assert(inet_pton(AF_INET, ip_str, &addr->sin_addr) == 1);
-}
-
-/*====================================================================================================================*
- * main()                                                                                                             *
- *====================================================================================================================*/
-
-/**
- * @brief Exercises a one-way direction communication through UDP.
- *
- * This system-level test instantiates two demikernel nodes: a client and a server. The client sends UDP packets to the
- * server in a tight loop. The server process in a tight loop received UDP packets from the client.
- *
- * @param argc Argument count.
- * @param argv Argument list.
- *
- * @return On successful completion EXIT_SUCCESS is returned.
- */
 int main(int argc, char *const argv[])
 {
     /* Install signal handlers. */
