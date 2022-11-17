@@ -1,0 +1,26 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
+client:
+  connect_to:
+    host: 10.10.1.2
+    port: 3000
+  client:
+    host: 10.10.1.1
+    port: 3000
+server:
+  bind:
+    host: 10.10.1.2
+    port: 3000
+  client:
+    host: 10.10.1.1
+    port: 3000
+catnip:
+  my_ipv4_addr: 10.10.1.1
+  my_link_addr: "0c:42:a1:dd:57:30"
+  my_interface_name: "ens1f0"
+  arp_table:
+    "0c:42:a1:dd:5b:90": "10.10.1.2"
+    "0c:42:a1:dd:57:30": "10.10.1.1"
+dpdk:
+  eal_init: ["-c", "0xff", "-n", "4", "-w", "41:00.0","--proc-type=auto"]
