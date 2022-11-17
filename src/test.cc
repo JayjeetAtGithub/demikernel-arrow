@@ -5,7 +5,15 @@
 #include "utils.h"
 #include "compute.h"
 
-#define MAX_BYTES (DATA_SIZE * 1024)
+// 2 = OK
+
+static void respond_ok(int qd) {
+    demi_sgarray_t sga = demi_sgaalloc(1);
+    demi_qresult_t qr;
+    memset(sga.sga_segs[0].sgaseg_buf, 2, 1);
+    push_wait(qd, &sga, &qr);
+    assert(demi_sgafree(&sga) == 0);
+}
 
 static void server(int argc, char *const argv[], struct sockaddr_in *local)
 {
@@ -24,9 +32,12 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     cp::ExecContext exec_ctx;
     std::shared_ptr<arrow::RecordBatchReader> reader = 
         ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
+    std::shared_ptr<arrow::RecordBatch> batch;
+    arrow::Status s;
+    demi_sgarray_t sga;
+    demi_qresult_t qr;
     
     while (true) {
-        demi_qresult_t qr;
         pop_wait(qd, &qr);
 
         if (qr.qr_value.sga.sga_segs[0].sgaseg_len == 0) {
@@ -42,6 +53,20 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
         char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
         std::cout << "Received request: " << req << std::endl;
+
+        if (req == "a") {
+            s = reader->ReadNext(&batch);
+            if (!s.ok() || batch == nullptr) {
+                sga = demi_sgaalloc(10);
+                memset(sga.sga_segs[0].sgaseg_buf, 1, 10);
+                push_wait(qd, &sga, &qr);
+                assert(demi_sgafree(&sga) == 0);
+            } else {
+                respond_ok(qd); 
+            }
+        } else if (req == "b") {
+            
+        }
 
         demi_sgarray_t sga = demi_sgaalloc(DATA_SIZE);
         assert(sga.sga_segs != 0);
