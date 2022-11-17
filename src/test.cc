@@ -156,19 +156,21 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
     qd = accept_wait(sockqd);
 
-    demi_qresult_t qr;
-    demi_sgarray_t sga;
+    while (true) {
+        demi_qresult_t qr;
+        demi_sgarray_t sga;
 
-    pop_wait(qd, &qr);
+        pop_wait(qd, &qr);
 
-    sga = demi_sgaalloc(DATA_SIZE);
-    assert(sga.sga_segs != 0);
+        sga = demi_sgaalloc(DATA_SIZE);
+        assert(sga.sga_segs != 0);
 
-    memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
+        memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
 
-    push_wait(qd, &sga, &qr);
+        push_wait(qd, &sga, &qr);
 
-    assert(demi_sgafree(&sga) == 0);
+        assert(demi_sgafree(&sga) == 0);
+    }
 }
 
 /*====================================================================================================================*
