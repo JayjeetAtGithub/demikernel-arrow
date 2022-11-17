@@ -18,7 +18,7 @@ enum REQ_TYPE {
     REQ_TYPE_NEXT_BATCH,
     REQ_TYPE_NEXT_COLUMN,
     REQ_TYPE_NEXT_PACKET
-}
+};
 
 static void usage(const char *progname)
 {
