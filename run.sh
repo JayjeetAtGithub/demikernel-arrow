@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 
-export CONFIG_PATH=/users/noobjc/demikernel/$1.yaml
+export CONFIG_PATH=config/$1.yaml
 export MTU=1500
 export MSS=1500
 export LIBOS=$3
