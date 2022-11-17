@@ -142,8 +142,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         pop_wait(sockqd, &qr);
 
         /* Check payload. */
-        for (uint32_t i = 0; i < qr.qr_value.sga.sga_segs[0].sgaseg_len; i++)
-            assert(((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf)[i] == 1);
+        // for (uint32_t i = 0; i < qr.qr_value.sga.sga_segs[0].sgaseg_len; i++)
+        //     assert(((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf)[i] == 1);
         nbytes += qr.qr_value.sga.sga_segs[0].sgaseg_len;
 
         /* Release received scatter-gather array. */
