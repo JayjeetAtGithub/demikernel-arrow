@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "utils.h"
+#include "compute.h"
 
 #define MAX_BYTES (DATA_SIZE * 1024)
 
@@ -19,6 +20,10 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     assert(demi_listen(sockqd, 16) == 0);
 
     qd = accept_wait(sockqd);
+
+    cp::ExecContext exec_ctx;
+    std::shared_ptr<arrow::RecordBatchReader> reader = 
+        ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
 
     while (nbytes < MAX_BYTES)
     {
