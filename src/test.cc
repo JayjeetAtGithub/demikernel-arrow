@@ -40,7 +40,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
         assert(qr.qr_value.sga.sga_segs[0].sgaseg_len == MAX_REQ_SIZE);
 
-        char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf)[0];
+        char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
         std::cout << "Received request: " << req << std::endl;
 
         demi_sgarray_t sga = demi_sgaalloc(DATA_SIZE);
