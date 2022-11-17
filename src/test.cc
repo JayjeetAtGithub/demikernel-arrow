@@ -159,8 +159,8 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
     while (nbytes < MAX_BYTES)
     {
-        demi_qresult_t qr = {0};
-        demi_sgarray_t sga = {0};
+        demi_qresult_t qr;
+        demi_sgarray_t sga;
 
         /* Pop scatter-gather array. */
         pop_wait(qd, &qr);
