@@ -15,6 +15,15 @@ static void respond_ok(int qd) {
     assert(demi_sgafree(&sga) == 0);
 }
 
+static void respond_data(int qd, uint8_t* buf, size_t size) {
+    assert(size <= DATA_SIZE);
+    demi_sgarray_t sga = demi_sgaalloc(size);
+    demi_qresult_t qr;
+    memcpy(sga.sga_segs[0].sgaseg_buf, buf, size);
+    push_wait(qd, &sga, &qr);
+    assert(demi_sgafree(&sga) == 0);
+}
+
 static void server(int argc, char *const argv[], struct sockaddr_in *local)
 {
     int qd = -1;
@@ -62,6 +71,13 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                 push_wait(qd, &sga, &qr);
                 assert(demi_sgafree(&sga) == 0);
             } else {
+                std::shared_ptr<arrow::Buffer> buffer = 
+                    arrow::SerializeRecordBatch(*batch).ValueOrDie();
+                if (response_size <= DATA_SIZE) {
+                    respond_data(qd, buffer->data(), buffer->size());
+                } else {
+                    // do some thing else
+                }
                 respond_ok(qd); 
             }
         } else if (req == 'b') {
