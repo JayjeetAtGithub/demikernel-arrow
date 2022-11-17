@@ -173,10 +173,10 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
         sga = demi_sgaalloc(DATA_SIZE);
         assert(sga.sga_segs != 0);
 
-        /* Cook request data. */
+        /* Cook response data. */
         memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
 
-        nbytes += sga.sga_segs[0].sgaseg_len;
+        nbytes += DATA_SIZE;
 
         /* Push scatter-gather array. */
         push_wait(qd, &sga, &qr);
