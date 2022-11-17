@@ -24,32 +24,59 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     cp::ExecContext exec_ctx;
     std::shared_ptr<arrow::RecordBatchReader> reader = 
         ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
-
-    while (nbytes < MAX_BYTES)
-    {
+    
+    while (true) {
         demi_qresult_t qr;
-        demi_sgarray_t sga;
-
-        /* Pop scatter-gather array. */
         pop_wait(qd, &qr);
 
-        /* Extract received scatter-gather array. */
-        // fprintf(stdout, "size %d", sizeof(demi_sgarray_t));
-        // memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
-        sga = demi_sgaalloc(DATA_SIZE);
+        if (qr.qr_value.sga.sga_segs[0].sg_len == 0) {
+            break;
+        }
+
+        if (qr.qr_value.sga.sga_segs[0].sg_len > MAX_REQ_SIZE) {
+            std::cout << "Error: Request size too large to process." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        assert(qr.qr_value.sga.sga_segs[0].sg_len == MAX_REQ_SIZE);
+
+        char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf)[0];
+        std::cout << "Received request: " << req << std::endl;
+
+        demi_sgarray_t sga = demi_sgaalloc(DATA_SIZE);
         assert(sga.sga_segs != 0);
         memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
 
-        nbytes += sga.sga_segs[0].sgaseg_len;
-
-        /* Push scatter-gather array. */
         push_wait(qd, &sga, &qr);
-
-        /* Release received scatter-gather array. */
         assert(demi_sgafree(&sga) == 0);
-
-        fprintf(stdout, "ping (%d)\n", nbytes);
     }
+
+
+    // while (nbytes < MAX_BYTES)
+    // {
+    //     demi_qresult_t qr;
+    //     demi_sgarray_t sga;
+
+    //     /* Pop scatter-gather array. */
+    //     pop_wait(qd, &qr);
+
+    //     /* Extract received scatter-gather array. */
+    //     // fprintf(stdout, "size %d", sizeof(demi_sgarray_t));
+    //     // memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
+    //     sga = demi_sgaalloc(DATA_SIZE);
+    //     assert(sga.sga_segs != 0);
+    //     memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
+
+    //     nbytes += sga.sga_segs[0].sgaseg_len;
+
+    //     /* Push scatter-gather array. */
+    //     push_wait(qd, &sga, &qr);
+
+    //     /* Release received scatter-gather array. */
+    //     assert(demi_sgafree(&sga) == 0);
+
+    //     fprintf(stdout, "ping (%d)\n", nbytes);
+    // }
 }
 
 static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
@@ -73,11 +100,11 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         demi_sgarray_t sga;
 
         /* Allocate scatter-gather array. */
-        sga = demi_sgaalloc(DATA_SIZE);
+        sga = demi_sgaalloc(1);
         assert(sga.sga_segs != 0);
 
         /* Cook request data. */
-        memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
+        memset(sga.sga_segs[0].sgaseg_buf, "a", DATA_SIZE);
 
         /* Push scatter-gather array. */
         push_wait(sockqd, &sga, &qr);

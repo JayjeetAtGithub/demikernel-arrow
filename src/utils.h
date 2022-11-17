@@ -11,8 +11,14 @@
 #include <string.h>
 #include <sys/socket.h>
 
+#define MAX_REQ_SIZE 1
 #define DATA_SIZE 1024
 
+enum REQ_TYPE {
+    REQ_TYPE_NEXT_BATCH,
+    REQ_TYPE_NEXT_COLUMN,
+    REQ_TYPE_NEXT_PACKET
+}
 
 static void usage(const char *progname)
 {
