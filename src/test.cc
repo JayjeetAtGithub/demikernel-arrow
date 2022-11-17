@@ -29,16 +29,16 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
         demi_qresult_t qr;
         pop_wait(qd, &qr);
 
-        if (qr.qr_value.sga.sga_segs[0].sg_len == 0) {
+        if (qr.qr_value.sga.sga_segs[0].sgaseg_len == 0) {
             break;
         }
 
-        if (qr.qr_value.sga.sga_segs[0].sg_len > MAX_REQ_SIZE) {
+        if (qr.qr_value.sga.sga_segs[0].sgaseg_len > MAX_REQ_SIZE) {
             std::cout << "Error: Request size too large to process." << std::endl;
             exit(EXIT_FAILURE);
         }
 
-        assert(qr.qr_value.sga.sga_segs[0].sg_len == MAX_REQ_SIZE);
+        assert(qr.qr_value.sga.sga_segs[0].sgaseg_len == MAX_REQ_SIZE);
 
         char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf)[0];
         std::cout << "Received request: " << req << std::endl;
