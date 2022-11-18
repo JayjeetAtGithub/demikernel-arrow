@@ -64,6 +64,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
     arrow::Status s;
     std::shared_ptr<arrow::Buffer> buffer;
     int32_t bytes_remaining = 0;
+    int32_t total_data_requests = 0;
 
     while (true) {
         pop_wait(qd, &qr);
@@ -85,7 +86,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
         if (req == 'c') {
             s = reader->ReadNext(&batch);
             if (!s.ok() || batch == nullptr) {
-                std::cout << "Finished sending dataset." << std::endl;
+                std::cout << "Finished sending dataset in " << total_data_requests << " requests." << std::endl;
                 respond_finish(qd);
                 break;
             }
@@ -93,6 +94,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
             respond_data(qd, reinterpret_cast<const uint8_t*>(to_buf(buffer->size())), sizeof(int32_t));
             bytes_remaining = buffer->size();
         } else if (req == 'd') {
+            total_data_requests++;
             int bytes_to_send = std::min(bytes_remaining, 1450);
             respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
             bytes_remaining -= bytes_to_send;
