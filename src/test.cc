@@ -7,7 +7,6 @@
 
 
 static demi_qresult_t request_control(int qd) {
-    std::cout << "request_control" << std::endl;
     demi_sgarray_t sga = demi_sgaalloc(1);
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, "c", 1);
@@ -19,7 +18,6 @@ static demi_qresult_t request_control(int qd) {
 }
 
 static demi_qresult_t request_data(int qd) {
-    std::cout << "request_data" << std::endl;
     demi_sgarray_t sga = demi_sgaalloc(1);
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, "d", 1);
@@ -84,7 +82,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
         assert(qr.qr_value.sga.sga_segs[0].sgaseg_len == MAX_REQ_SIZE);
 
         char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
-        std::cout << "Received request: " << req << std::endl;
 
         if (req == 'c') {
             s = reader->ReadNext(&batch);
@@ -96,6 +93,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
             buffer = arrow::ipc::SerializeRecordBatch(*batch, arrow::ipc::IpcWriteOptions::Defaults()).ValueOrDie();
             respond_data(qd, reinterpret_cast<const uint8_t*>(to_buf(buffer->size())), sizeof(int32_t));
             bytes_remaining = buffer->size();
+            std::cout << "Sending data size: " << bytes_remaining << std::endl;
         } else if (req == 'd') {
             int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
             respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
@@ -134,7 +132,6 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         } else if (req_mode == 2) {
             demi_qresult_t qr = request_data(sockqd);
             offset += qr.qr_value.sga.sga_segs[0].sgaseg_len;
-            std::cout << "Offset at " << offset << std::endl;
             if (offset == size) {
                 offset = 0;
                 size = 0;
