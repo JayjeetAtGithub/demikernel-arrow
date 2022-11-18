@@ -138,8 +138,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
             offset += qr.qr_value.sga.sga_segs[0].sgaseg_len;
             if (offset == size) {
                 auto batch = UnpackRecordBatch(buf, size).ValueOrDie();
-                std::cout << batch->ToString() << std::endl;
                 total_rows += batch->num_rows();
+                std::cout << "Received " << total_rows << " rows." << std::endl;
                 offset = 0;
                 size = 0;
                 req_mode = 1;
