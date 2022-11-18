@@ -70,7 +70,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
             assert(demi_sgafree(&sga) == 0);
         } else {
             std::shared_ptr<arrow::Buffer> buffer = 
-                arrow::ipc::SerializeRecordBatch(*batch).ValueOrDie();
+                arrow::ipc::SerializeRecordBatch(batch).ValueOrDie();
             if (buffer->size() <= DATA_SIZE) {
                 respond_data(qd, buffer->data(), buffer->size());
             } else {
