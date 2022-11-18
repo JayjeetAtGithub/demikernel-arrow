@@ -85,7 +85,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
 
         if (req == 'c') {
             s = reader->ReadNext(&batch);
-            std::cout << "Read batch" << std::endl;
+            std::cout << "Read batch : " << batch->num_rows() << std::endl;
             if (!s.ok() || batch == nullptr) {
                 std::cout << "Finished sending dataset." << std::endl;
                 respond_finish(qd);
