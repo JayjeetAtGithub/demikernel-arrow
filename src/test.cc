@@ -7,6 +7,7 @@
 
 
 static demi_qresult_t request_control(int qd) {
+    std::cout << "request_control" << std::endl;
     demi_sgarray_t sga;
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, "c", 1);
@@ -18,6 +19,7 @@ static demi_qresult_t request_control(int qd) {
 }
 
 static demi_qresult_t request_data(int qd) {
+    std::cout << "request_data" << std::endl;
     demi_sgarray_t sga;
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, "d", 1);
