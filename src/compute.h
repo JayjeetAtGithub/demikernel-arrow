@@ -24,7 +24,7 @@
 
 namespace cp = arrow::compute;
 
-std::shared_ptr<arrow::Buffer> PackRecordBatch(const std::shared_ptr<arrow::RecordBatch>& batch) {
+arrow::Result<std::shared_ptr<arrow::Buffer>> PackRecordBatch(const std::shared_ptr<arrow::RecordBatch>& batch) {
   ARROW_ASSIGN_OR_RAISE(auto buffer_output_stream,
                         arrow::io::BufferOutputStream::Create());
 
@@ -42,7 +42,7 @@ std::shared_ptr<arrow::Buffer> PackRecordBatch(const std::shared_ptr<arrow::Reco
   return buffer;
 }
 
-std::shared_ptr<arrow::RecordBatch> UnpackRecordBatch(uint8_t* data, int32_t size) {
+arrow::Result<std::shared_ptr<arrow::RecordBatch>> UnpackRecordBatch(uint8_t* data, int32_t size) {
   auto buffer = std::make_shared<arrow::Buffer>(data, size);
   auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
   auto options = arrow::ipc::IpcReadOptions::Defaults();

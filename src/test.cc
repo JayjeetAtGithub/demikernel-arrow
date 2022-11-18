@@ -90,7 +90,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
                 respond_finish(qd);
                 break;
             }
-            buffer = arrow::ipc::SerializeRecordBatch(*batch, arrow::ipc::IpcWriteOptions::Defaults()).ValueOrDie();
+            buffer = PackRecordBatch(batch).ValueOrDie();
             respond_data(qd, reinterpret_cast<const uint8_t*>(to_buf(buffer->size())), sizeof(int32_t));
             bytes_remaining = buffer->size();
         } else if (req == 'd') {
@@ -135,7 +135,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
             memcpy(buf + offset, qr.qr_value.sga.sga_segs[0].sgaseg_buf, qr.qr_value.sga.sga_segs[0].sgaseg_len);
             offset += qr.qr_value.sga.sga_segs[0].sgaseg_len;
             if (offset == size) {
-                auto batch = UnpackRecordBatch(buf, size);
+                auto batch = UnpackRecordBatch(buf, size).ValueOrDie();
                 std::cout << batch->ToString() << std::endl;
                 offset = 0;
                 size = 0;
