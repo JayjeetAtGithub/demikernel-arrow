@@ -22,9 +22,11 @@ static demi_qresult_t request_data(int qd) {
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, "d", 1);
     push_wait(qd, &sga, &qr);
+    std::cout << "pushed" << std::endl; 
     assert(demi_sgafree(&sga) == 0);
     memset(&qr, 0, sizeof(demi_qresult_t));
     pop_wait(qd, &qr);
+    std::cout << "popped" << std::endl;
     return qr;
 }
 
