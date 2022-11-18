@@ -93,7 +93,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
             buffer = arrow::ipc::SerializeRecordBatch(*batch, arrow::ipc::IpcWriteOptions::Defaults()).ValueOrDie();
             respond_data(qd, reinterpret_cast<const uint8_t*>(to_buf(buffer->size())), sizeof(int32_t));
             bytes_remaining = buffer->size();
-            std::cout << "Sending data size: " << bytes_remaining << std::endl;
         } else if (req == 'd') {
             int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
             respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
@@ -127,6 +126,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
                 break;
             } else {
                 size = from_buf((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
+                std::cout << "Received size: " << size << std::endl;
                 req_mode = 2;
             }
         } else if (req_mode == 2) {
@@ -161,6 +161,5 @@ int main(int argc, char *const argv[]) {
     }
 
     usage(argv[0]);
-
     return (EXIT_SUCCESS);
 }
