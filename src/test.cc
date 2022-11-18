@@ -3,15 +3,6 @@
 #include "utils.h"
 #include "compute.h"
 
-std::shared_ptr<arrow::RecordBatch> UnpackRecordBatch(uint8_t *buf, size_t size) {
-    auto buffer = std::make_shared<arrow::Buffer>(buf, len);
-    auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
-    auto reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader,
-        arrow::ipc::IpcReadOptions::Defaults()).ValueOrDie();
-    auto batch = reader->ReadRecordBatch(0).ValueOrDie();
-    return batch;
-}
-
 static demi_qresult_t request_control(int qd) {
     demi_sgarray_t sga = demi_sgaalloc(1);
     demi_qresult_t qr;

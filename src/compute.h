@@ -22,9 +22,16 @@
 #include <arrow/util/thread_pool.h>
 #include <arrow/util/vector.h>
 
-
 namespace cp = arrow::compute;
 
+std::shared_ptr<arrow::RecordBatch> UnpackRecordBatch(uint8_t *buf, size_t size) {
+    auto buffer = std::make_shared<arrow::Buffer>(buf, len);
+    auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
+    auto reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader,
+        arrow::ipc::IpcReadOptions::Defaults()).ValueOrDie();
+    auto batch = reader->ReadRecordBatch(0).ValueOrDie();
+    return batch;
+}
 
 arrow::compute::Expression GetFilter(std::string selectivity) {
   if (selectivity == "100") {
