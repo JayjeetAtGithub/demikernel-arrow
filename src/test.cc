@@ -22,11 +22,9 @@ static demi_qresult_t request_data(int qd) {
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, "d", 1);
     push_wait(qd, &sga, &qr);
-    std::cout << "pushed" << std::endl; 
     assert(demi_sgafree(&sga) == 0);
     memset(&qr, 0, sizeof(demi_qresult_t));
     pop_wait(qd, &qr);
-    std::cout << "popped" << std::endl;
     return qr;
 }
 
@@ -43,7 +41,6 @@ static void respond_data(int qd, const uint8_t* buf, size_t size) {
     demi_sgarray_t sga = demi_sgaalloc(size);
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, buf, size);
-    std::cout << "responding with " << size << " bytes" << std::endl;
     push_wait(qd, &sga, &qr);
     assert(demi_sgafree(&sga) == 0);
 }
@@ -96,11 +93,9 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
                 break;
             }
             buffer = arrow::ipc::SerializeRecordBatch(*batch, arrow::ipc::IpcWriteOptions::Defaults()).ValueOrDie();
-            std::cout << "Sending batch of size " << buffer->size() << std::endl;
             respond_data(qd, reinterpret_cast<const uint8_t*>(to_buf(buffer->size())), sizeof(int32_t));
             bytes_remaining = buffer->size();
         } else if (req == 'd') {
-            std::cout << "Got a d request" << std::endl;
             int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
             respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
             bytes_remaining -= bytes_to_send;
@@ -139,9 +134,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
             req_mode = 2;
             assert(demi_sgafree(&qr.qr_value.sga) == 0);
         } else if (req_mode == 2) {
-            std::cout << "Requesting data: " << size - offset << std::endl;
             demi_qresult_t qr = request_data(sockqd);
-            std::cout << "Received data: " << qr.qr_value.sga.sga_segs[0].sgaseg_len << std::endl;
             offset += qr.qr_value.sga.sga_segs[0].sgaseg_len;
             if (offset >= size) {
                 offset = 0;
