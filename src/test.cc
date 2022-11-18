@@ -122,9 +122,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         if (req_mode == 1) {
             demi_qresult_t qr = request_control(sockqd);
             size = from_buf((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
-            std::cout << "Received size: " << size << std::endl;
-            if (size == 1) {
-                std::cout << "We never came here" << std::endl;
+            if (qr.qr_value.sga.sga_segs[0].sgaseg_len == 1) {
                 char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
                 if (req == 'f') {
                     std::cout << "Finished receiving dataset : " << total_rows << std::endl;
