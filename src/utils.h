@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 
+#include <iostream>
 #include <arpa/inet.h>
 #include <assert.h>
 #include <demi/libos.h>

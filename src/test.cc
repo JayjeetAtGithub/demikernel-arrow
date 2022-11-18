@@ -1,10 +1,16 @@
 #define _POSIX_C_SOURCE 200809L
 
-#include <iostream>
-
 #include "utils.h"
 #include "compute.h"
 
+std::shared_ptr<arrow::RecordBatch> UnpackRecordBatch(uint8_t *buf, size_t size) {
+    auto buffer = std::make_shared<arrow::Buffer>(buf, len);
+    auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
+    auto reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader,
+        arrow::ipc::IpcReadOptions::Defaults()).ValueOrDie();
+    auto batch = reader->ReadRecordBatch(0).ValueOrDie();
+    return batch;
+}
 
 static demi_qresult_t request_control(int qd) {
     demi_sgarray_t sga = demi_sgaalloc(1);
@@ -117,10 +123,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
 
     int32_t size = 0;
     int32_t offset = 0;
-    
-    // 1: control
-    // 2: data
     int req_mode = 1;
+    uint8_t *buf;
 
     while (true) {
         if (req_mode == 1) {
@@ -132,12 +136,16 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
                     break;
                 }
             }
+            buf = (uint8_t *)malloc(size);
             req_mode = 2;
             assert(demi_sgafree(&qr.qr_value.sga) == 0);
         } else if (req_mode == 2) {
             demi_qresult_t qr = request_data(sockqd);
+            memcpy(buf + offset, qr.qr_value.sga.sga_segs[0].sgaseg_buf, qr.qr_value.sga.sga_segs[0].sgaseg_len);
             offset += qr.qr_value.sga.sga_segs[0].sgaseg_len;
-            if (offset >= size) {
+            if (offset == size) {
+                auto batch = UnpackRecordBatch(buf, size);
+                std::cout << batch->ToString() << std::endl;
                 offset = 0;
                 size = 0;
                 req_mode = 1;
