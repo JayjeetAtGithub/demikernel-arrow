@@ -34,7 +34,6 @@ static void respond_finish(int qd) {
     demi_sgarray_t sga;
     demi_qresult_t qr;
     push_wait(qd, &sga, &qr);
-    assert(demi_sgafree(&sga) == 0);
 }
 
 static void respond_data(int qd, const uint8_t* buf, size_t size) {
