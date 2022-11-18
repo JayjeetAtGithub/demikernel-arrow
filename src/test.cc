@@ -44,6 +44,7 @@ static void respond_data(int qd, const uint8_t* buf, size_t size) {
     std::cout << "responding with " << size << " bytes" << std::endl;
     push_wait(qd, &sga, &qr);
     assert(demi_sgafree(&sga) == 0);
+    assert(demi_sgafree(&qr.qr_value.sga) == 0);
 }
 
 static void server(int argc, char *const argv[], struct sockaddr_in *local) {
@@ -84,6 +85,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
         assert(qr.qr_value.sga.sga_segs[0].sgaseg_len == MAX_REQ_SIZE);
 
         char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
+        assert(demi_sgafree(&qr.qr_value.sga) == 0);
 
         if (req == 'c') {
             s = reader->ReadNext(&batch);
@@ -133,6 +135,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
                 std::cout << "Received size: " << size << std::endl;
                 req_mode = 2;
             }
+            assert(demi_sgafree(&qr.qr_value.sga) == 0);
         } else if (req_mode == 2) {
             std::cout << "Requesting data: " << size - offset << std::endl;
             demi_qresult_t qr = request_data(sockqd);
@@ -145,6 +148,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
             } else {
                 req_mode = 2;
             }
+            assert(demi_sgafree(&qr.qr_value.sga) == 0);
         }
     }
 }
