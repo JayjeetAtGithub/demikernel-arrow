@@ -1,68 +1,50 @@
 #define _POSIX_C_SOURCE 200809L
 
-#include <arpa/inet.h>
-#include <assert.h>
-#include <demi/libos.h>
-#include <demi/sga.h>
-#include <demi/wait.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-
+#include "utils.h"
 #include "compute.h"
 
-
-static void sighandler(int signum)
-{
-    const char *signame = strsignal(signum);
-
-    fprintf(stderr, "\nReceived %s signal\n", signame);
-    fprintf(stderr, "Exiting...\n");
-
-    exit(EXIT_SUCCESS);
+static demi_qresult_t request_control(int qd) {
+    demi_sgarray_t sga = demi_sgaalloc(1);
+    demi_qresult_t qr;
+    memcpy(sga.sga_segs[0].sgaseg_buf, "c", 1);
+    push_wait(qd, &sga, &qr);
+    assert(demi_sgafree(&sga) == 0);
+    memset(&qr, 0, sizeof(demi_qresult_t));
+    pop_wait(qd, &qr);
+    return qr;
 }
 
-static int accept_wait(int qd)
-{
-    demi_qtoken_t qt = -1;
-    demi_qresult_t qr ;
-    assert(demi_accept(&qt, qd) == 0);
-    assert(demi_wait(&qr, qt) == 0);
-    assert(qr.qr_opcode == DEMI_OPC_ACCEPT);
-    return (qr.qr_value.ares.qd);
+static demi_qresult_t request_data(int qd) {
+    demi_sgarray_t sga = demi_sgaalloc(1);
+    demi_qresult_t qr;
+    memcpy(sga.sga_segs[0].sgaseg_buf, "d", 1);
+    push_wait(qd, &sga, &qr);
+    assert(demi_sgafree(&sga) == 0);
+    memset(&qr, 0, sizeof(demi_qresult_t));
+    pop_wait(qd, &qr);
+    return qr;
 }
 
-static void connect_wait(int qd, const struct sockaddr_in *saddr)
-{
-    demi_qtoken_t qt = -1;
-    demi_qresult_t qr ;
-    assert(demi_connect(&qt, qd, (const struct sockaddr *)saddr, sizeof(struct sockaddr_in)) == 0);
-    assert(demi_wait(&qr, qt) == 0);
-    assert(qr.qr_opcode == DEMI_OPC_CONNECT);
+static void respond_finish(int qd) {
+    demi_sgarray_t sga = demi_sgaalloc(1);
+    demi_qresult_t qr;
+    memcpy(sga.sga_segs[0].sgaseg_buf, "f", 1);
+    push_wait(qd, &sga, &qr);
+    assert(demi_sgafree(&sga) == 0);
 }
 
-static void push_wait(int qd, demi_sgarray_t *sga, demi_qresult_t *qr)
-{
-    demi_qtoken_t qt = -1;
-    assert(demi_push(&qt, qd, sga) == 0);
-    assert(demi_wait(qr, qt) == 0);
-    assert(qr->qr_opcode == DEMI_OPC_PUSH);
+static void respond_data(int qd, const uint8_t* buf, size_t size) {
+    assert(size <= DATA_SIZE);
+    demi_sgarray_t sga = demi_sgaalloc(size);
+    demi_qresult_t qr;
+    memcpy(sga.sga_segs[0].sgaseg_buf, buf, size);
+    push_wait(qd, &sga, &qr);
+    assert(demi_sgafree(&sga) == 0);
 }
 
-static void pop_wait(int qd, demi_qresult_t *qr)
-{
-    demi_qtoken_t qt = -1;
-    assert(demi_pop(&qt, qd) == 0);
-    assert(demi_wait(qr, qt) == 0);
-    assert(qr->qr_opcode == DEMI_OPC_POP);
-    assert(qr->qr_value.sga.sga_segs != 0);
-}
-
-static void server(int argc, char *const argv[], struct sockaddr_in *local)
-{
+static void server(int argc, char *const argv[], struct sockaddr_in *local) {
     int qd = -1;
+    int nbytes = 0;
     int sockqd = -1;
 
     assert(demi_init(argc, argv) == 0);
@@ -74,126 +56,110 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     qd = accept_wait(sockqd);
 
     cp::ExecContext exec_ctx;
-    std::shared_ptr<arrow::RecordBatchReader> reader = ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
-
+    std::shared_ptr<arrow::RecordBatchReader> reader = 
+        ScanDataset(exec_ctx, "dataset", "1").ValueOrDie();
     std::shared_ptr<arrow::RecordBatch> batch;
-    if (reader->ReadNext(&batch).ok() && batch != nullptr) {        
-        int64_t num_cols = batch->num_columns();
-        for (int64_t i = 0; i < num_cols; i++) {
-            std::cout << "Sending column " << i << std::endl;
-            std::shared_ptr<arrow::Array> col_arr = batch->column(i);
-            arrow::Type::type type = col_arr->type_id();
-            int64_t null_count = col_arr->null_count();
+    demi_sgarray_t sga;
+    demi_qresult_t qr;
+    arrow::Status s;
+    std::shared_ptr<arrow::Buffer> buffer;
+    int32_t bytes_remaining = 0;
 
-            if (is_binary_like(type)) {
-                std::cout << "binary type" << std::endl;
-                std::shared_ptr<arrow::Buffer> data_buff = 
-                    std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_data();
-                std::shared_ptr<arrow::Buffer> offset_buff = 
-                    std::static_pointer_cast<arrow::BinaryArray>(col_arr)->value_offsets();
-                
-                int offset;
-                int bytes_remaining;
+    while (true) {
+        pop_wait(qd, &qr);
 
-                offset = 0;
-                bytes_remaining = data_buff->size();
-                while (bytes_remaining > 0) {
-                    int packet_size = std::min(1024, bytes_remaining);
-                    demi_sgarray_t sga = demi_sgaalloc(packet_size);
-                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + offset), packet_size);
-                    demi_qresult_t qr;
-                    push_wait(qd, &sga, &qr);
-                    bytes_remaining -= packet_size;
-                    offset += packet_size;
-                    assert(demi_sgafree(&sga) == 0);
-                }
+        if (qr.qr_value.sga.sga_segs[0].sgaseg_len == 0) {
+            break;
+        }
 
-                offset = 0;
-                bytes_remaining = offset_buff->size();
-                while (bytes_remaining > 0) {
-                    int packet_size = std::min(1024, bytes_remaining);
-                    demi_sgarray_t sga = demi_sgaalloc(packet_size);
-                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(offset_buff->data() + offset), packet_size);
-                    demi_qresult_t qr;
-                    push_wait(qd, &sga, &qr);
-                    bytes_remaining -= packet_size;
-                    offset += packet_size;
-                    assert(demi_sgafree(&sga) == 0);
-                }
-            } else {
-                std::cout << "primitive type" << std::endl;
-                std::shared_ptr<arrow::Buffer> data_buff = 
-                    std::static_pointer_cast<arrow::PrimitiveArray>(col_arr)->values();
-                
-                int offset = 0;
-                int bytes_remaining = data_buff->size();
-                while (bytes_remaining > 0) {
-                    int packet_size = std::min(1024, bytes_remaining);
-                    demi_sgarray_t sga = demi_sgaalloc(packet_size);
-                    memcpy(sga.sga_segs[0].sgaseg_buf, (void*)(data_buff->data() + offset), packet_size);
-                    demi_qresult_t qr;
-                    push_wait(qd, &sga, &qr);
-                    bytes_remaining -= packet_size;
-                    offset += packet_size;
-                    assert(demi_sgafree(&sga) == 0);
-                }
-                std::cout << "Done sending column " << i << std::endl;
+        if (qr.qr_value.sga.sga_segs[0].sgaseg_len > MAX_REQ_SIZE) {
+            std::cout << "Error: Request size too large to process." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        assert(qr.qr_value.sga.sga_segs[0].sgaseg_len == MAX_REQ_SIZE);
+
+        char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
+        assert(demi_sgafree(&qr.qr_value.sga) == 0);
+
+        if (req == 'c') {
+            s = reader->ReadNext(&batch);
+            if (!s.ok() || batch == nullptr) {
+                std::cout << "Finished sending dataset." << std::endl;
+                respond_finish(qd);
+                break;
             }
+            buffer = PackRecordBatch(batch).ValueOrDie();
+            respond_data(qd, reinterpret_cast<const uint8_t*>(to_buf(buffer->size())), sizeof(int32_t));
+            bytes_remaining = buffer->size();
+        } else if (req == 'd') {
+            int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
+            respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
+            bytes_remaining -= bytes_to_send;
+        } else {
+            std::cout << "Error: Invalid request." << std::endl;
+            exit(EXIT_FAILURE);
         }
     }
 }
 
-static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
-{
-    int nbatches = 0;
+static void client(int argc, char *const argv[], const struct sockaddr_in *remote) {
+    int nbytes = 0;
     int sockqd = -1;
 
     assert(demi_init(argc, argv) == 0);
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
     connect_wait(sockqd, remote);
 
-    while (true)
-    {
-        demi_qresult_t qr;
-        demi_sgarray_t sga = demi_sgaalloc(1024);
+    int32_t size = 0;
+    int32_t offset = 0;
+    int req_mode = 1;
+    uint8_t *buf;
 
-        pop_wait(sockqd, &qr);
-        memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
-        std::cout << sga.sga_segs[0].sgaseg_len << std::endl;
-        assert(demi_sgafree(&sga) == 0);
+    int32_t total_rows = 0;
+
+    while (true) {
+        if (req_mode == 1) {
+            demi_qresult_t qr = request_control(sockqd);
+            size = from_buf((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
+            if (qr.qr_value.sga.sga_segs[0].sgaseg_len == 1) {
+                char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
+                if (req == 'f') {
+                    std::cout << "Finished receiving dataset : " << total_rows << std::endl;
+                    break;
+                }
+            }
+            buf = (uint8_t *)malloc(size);
+            req_mode = 2;
+            assert(demi_sgafree(&qr.qr_value.sga) == 0);
+        } else if (req_mode == 2) {
+            demi_qresult_t qr = request_data(sockqd);
+            memcpy(buf + offset, qr.qr_value.sga.sga_segs[0].sgaseg_buf, qr.qr_value.sga.sga_segs[0].sgaseg_len);
+            offset += qr.qr_value.sga.sga_segs[0].sgaseg_len;
+            if (offset == size) {
+                auto batch = UnpackRecordBatch(buf, size).ValueOrDie();
+                total_rows += batch->num_rows();
+                std::cout << "Received " << total_rows << " rows." << std::endl;
+                offset = 0;
+                size = 0;
+                req_mode = 1;
+            } else {
+                req_mode = 2;
+            }
+            assert(demi_sgafree(&qr.qr_value.sga) == 0);
+        }
     }
 }
 
-static void usage(const char *progname)
-{
-    fprintf(stderr, "Usage: %s MODE ipv4-address port\n", progname);
-    fprintf(stderr, "MODE:\n");
-    fprintf(stderr, "  --client    Run in client mode.\n");
-    fprintf(stderr, "  --server    Run in server mode.\n");
-}
-
-void build_sockaddr(const char *const ip_str, const char *const port_str, struct sockaddr_in *const addr)
-{
-    int port = -1;
-
-    sscanf(port_str, "%d", &port);
-    addr->sin_family = AF_INET;
-    addr->sin_port = htons(port);
-    assert(inet_pton(AF_INET, ip_str, &addr->sin_addr) == 1);
-}
-
-int main(int argc, char *const argv[])
-{
+int main(int argc, char *const argv[]) {
     signal(SIGINT, sighandler);
     signal(SIGQUIT, sighandler);
     signal(SIGTSTP, sighandler);
 
     if (argc >= 4)
     {
-        struct sockaddr_in saddr ;
-
+        struct sockaddr_in saddr = {0};
         build_sockaddr(argv[2], argv[3], &saddr);
-
         if (!strcmp(argv[1], "--server"))
             server(argc, argv, &saddr);
         else if (!strcmp(argv[1], "--client"))
@@ -203,6 +169,5 @@ int main(int argc, char *const argv[])
     }
 
     usage(argv[0]);
-
     return (EXIT_SUCCESS);
 }
