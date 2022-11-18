@@ -24,7 +24,7 @@
 
 namespace cp = arrow::compute;
 
-std::shared_ptr<arrow::RecordBatch> UnpackRecordBatch(uint8_t *buf, size_t size) {
+std::shared_ptr<arrow::RecordBatch> UnpackRecordBatch(uint8_t *buf, size_t len) {
     auto buffer = std::make_shared<arrow::Buffer>(buf, len);
     auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
     auto reader = arrow::ipc::RecordBatchStreamReader::Open(buffer_reader,
