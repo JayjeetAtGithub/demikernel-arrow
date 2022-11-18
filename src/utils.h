@@ -109,3 +109,21 @@ static void pop_wait(int qd, demi_qresult_t *qr)
     assert(qr->qr_opcode == DEMI_OPC_POP);
     assert(qr->qr_value.sga.sga_segs != 0);
 }
+
+static char* to_buf(int32_t val) {
+    char buf[4];
+    buf[0] = (val >> 24) & 0xFF;
+    buf[1] = (val >> 16) & 0xFF;
+    buf[2] = (val >> 8) & 0xFF;
+    buf[3] = val & 0xFF;
+    return &buf;
+}
+
+static int32_t from_buf(char* buf) {
+    int32_t val = 0;
+    val |= (buf[0] & 0xFF) << 24;
+    val |= (buf[1] & 0xFF) << 16;
+    val |= (buf[2] & 0xFF) << 8;
+    val |= buf[3] & 0xFF;
+    return val;
+}

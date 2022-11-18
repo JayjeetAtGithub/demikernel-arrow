@@ -6,10 +6,31 @@
 #include "compute.h"
 
 
-static void respond_finish(int qd) {
-    demi_sgarray_t sga = demi_sgaalloc(1);
+static demi_qresult_t request_control(int qd) {
+    demi_sgarray_t sga;
     demi_qresult_t qr;
-    memcpy(sga.sga_segs[0].sgaseg_buf, "x", 1);
+    memcpy(sga.sga_segs[0].sgaseg_buf, "c", 1);
+    push_wait(qd, &sga, &qr);
+    assert(demi_sgafree(&sga) == 0);
+    memset(&qr, 0, sizeof(demi_qresult_t));
+    pop_wait(qd, &qr);
+    return qr;
+}
+
+static demi_qresult_t request_data(int qd) {
+    demi_sgarray_t sga;
+    demi_qresult_t qr;
+    memcpy(sga.sga_segs[0].sgaseg_buf, "d", 1);
+    push_wait(qd, &sga, &qr);
+    assert(demi_sgafree(&sga) == 0);
+    memset(&qr, 0, sizeof(demi_qresult_t));
+    pop_wait(qd, &qr);
+    return qr;
+}
+
+static void respond_finish(int qd) {
+    demi_sgarray_t sga;
+    demi_qresult_t qr;
     push_wait(qd, &sga, &qr);
     assert(demi_sgafree(&sga) == 0);
 }
@@ -23,8 +44,7 @@ static void respond_data(int qd, const uint8_t* buf, size_t size) {
     assert(demi_sgafree(&sga) == 0);
 }
 
-static void server(int argc, char *const argv[], struct sockaddr_in *local)
-{
+static void server(int argc, char *const argv[], struct sockaddr_in *local) {
     int qd = -1;
     int nbytes = 0;
     int sockqd = -1;
@@ -43,7 +63,10 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     std::shared_ptr<arrow::RecordBatch> batch;
     demi_sgarray_t sga;
     demi_qresult_t qr;
-    
+    arrow::Status s;
+    std::shared_ptr<arrow::Buffer> buffer;
+    int32_t bytes_remaining = 0;
+
     while (true) {
         pop_wait(qd, &qr);
 
@@ -60,32 +83,29 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
         char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
         std::cout << "Received request: " << req << std::endl;
-
-        arrow::Status s = reader->ReadNext(&batch);
-        if (!s.ok() || batch == nullptr) {
-            respond_finish(qd);
-            std::cout << "Finished sending data." << std::endl;
-        } else {
-            std::cout << "Number of rows: " << batch->num_rows() << std::endl;
-            auto options = arrow::ipc::IpcWriteOptions::Defaults();
-            std::shared_ptr<arrow::Buffer> buffer = 
-                arrow::ipc::SerializeRecordBatch(*batch, options).ValueOrDie();
-            if (buffer->size() <= DATA_SIZE) {
-                respond_data(qd, buffer->data(), buffer->size());
-            } else {
-                int bytes_remaining = 0;
-                while (bytes_remaining > 0) {
-                    int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
-                    respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
-                    bytes_remaining -= bytes_to_send;
-                }
+        
+        if (req == "c") {
+            s = reader->ReadNext(&batch);
+            if (!s.ok() || batch == nullptr) {
+                std::cout << "Finished sending dataset." << std::endl;
+                respond_finish(qd);
+                break;
             }
+            buffer = arrow::ipc::SerializeRecordBatch(*batch, arrow::ipc::IpcWriteOptions::Defaults()).ValueOrDie();
+            respond_data(qd, to_buf(buffer->size()));
+            bytes_remaining = buffer->size();
+        } else if (req == "d") {
+            int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
+            respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
+            bytes_remaining -= bytes_to_send;
+        } else {
+            std::cout << "Error: Invalid request." << std::endl;
+            exit(EXIT_FAILURE);
         }
     }
 }
 
-static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
-{
+static void client(int argc, char *const argv[], const struct sockaddr_in *remote) {
     int nbytes = 0;
     int sockqd = -1;
 
@@ -93,33 +113,37 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
     connect_wait(sockqd, remote);
 
-    while (true)
-    {
-        demi_qresult_t qr;
-        demi_sgarray_t sga;
+    int32_t size = 0;
+    int32_t offset = 0;
+    
+    // 1: control
+    // 2: data
+    int req_mode = 1;
 
-        sga = demi_sgaalloc(1);
-        assert(sga.sga_segs != 0);
-
-        memcpy(sga.sga_segs[0].sgaseg_buf, "a", 1);
-
-        push_wait(sockqd, &sga, &qr);
-
-        assert(demi_sgafree(&sga) == 0);
-
-        memset(&qr, 0, sizeof(demi_qresult_t));
-        pop_wait(sockqd, &qr);
-
-        char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
-        assert(demi_sgafree(&qr.qr_value.sga) == 0);
-        if (req == 'x') {
-            break;
+    while (true) {
+        if (req_mode == 1) {
+            demi_qresult_t qr = request_control(sockqd);
+            if (qr.qr_value.sga.sga_segs[0].sgaseg_len == 0) {
+                break;
+            } else {
+                size = from_buf((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
+                req_mode = 2;
+            }
+        } else if (req_mode == 2) {
+            demi_qresult_t qr = request_data(sockqd);
+            offset += qr.qr_value.sga.sga_segs[0].sgaseg_len;
+            if (offset == size) {
+                offset = 0;
+                size = 0;
+                req_mode = 1;
+            } else {
+                req_mode = 2;
+            }
         }
     }
 }
 
-int main(int argc, char *const argv[])
-{
+int main(int argc, char *const argv[]) {
     signal(SIGINT, sighandler);
     signal(SIGQUIT, sighandler);
     signal(SIGTSTP, sighandler);
