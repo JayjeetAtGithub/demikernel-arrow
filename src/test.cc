@@ -96,7 +96,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
             bytes_remaining = buffer->size();
         } else if (req == 'd') {
             int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
-            std::cout << "Sending " << bytes_to_send << " bytes." << std::endl;
             respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
             bytes_remaining -= bytes_to_send;
         } else {
@@ -132,6 +131,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
                 req_mode = 2;
             }
         } else if (req_mode == 2) {
+            std::cout << "Requesting data: " << size - offset << std::endl;
             demi_qresult_t qr = request_data(sockqd);
             offset += qr.qr_value.sga.sga_segs[0].sgaseg_len;
             if (offset >= size) {
