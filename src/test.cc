@@ -97,6 +97,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
             respond_data(qd, reinterpret_cast<const uint8_t*>(to_buf(buffer->size())), sizeof(int32_t));
             bytes_remaining = buffer->size();
         } else if (req == 'd') {
+            std::cout << "Got a d request" << std::endl;
             int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
             respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
             bytes_remaining -= bytes_to_send;
