@@ -42,7 +42,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
     std::shared_ptr<arrow::RecordBatchReader> reader = 
         ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
     std::shared_ptr<arrow::RecordBatch> batch;
-    arrow::Status s;
     demi_sgarray_t sga;
     demi_qresult_t qr;
     
@@ -63,61 +62,28 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
         char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
         std::cout << "Received request: " << req << std::endl;
 
-        if (req == 'a') {
-            s = reader->ReadNext(&batch);
-            if (!s.ok() || batch == nullptr) {
-                sga = demi_sgaalloc(10);
-                memset(sga.sga_segs[0].sgaseg_buf, 1, 10);
-                push_wait(qd, &sga, &qr);
-                assert(demi_sgafree(&sga) == 0);
+        arrow::Status s = reader->ReadNext(&batch);
+        if (!s.ok() || batch == nullptr) {
+            sga = demi_sgaalloc(10);
+            memset(sga.sga_segs[0].sgaseg_buf, 1, 10);
+            push_wait(qd, &sga, &qr);
+            assert(demi_sgafree(&sga) == 0);
+        } else {
+            std::shared_ptr<arrow::Buffer> buffer = 
+                arrow::SerializeRecordBatch(*batch).ValueOrDie();
+            if (response_size <= DATA_SIZE) {
+                respond_data(qd, buffer->data(), buffer->size());
             } else {
-                std::shared_ptr<arrow::Buffer> buffer = 
-                    arrow::SerializeRecordBatch(*batch).ValueOrDie();
-                if (response_size <= DATA_SIZE) {
-                    respond_data(qd, buffer->data(), buffer->size());
-                } else {
-                    // do some thing else
+                int bytes_remaining = 0;
+                while (bytes_remaining > 0) {
+                    int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
+                    respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
+                    bytes_remaining -= bytes_to_send;
                 }
-                respond_ok(qd); 
             }
-        } else if (req == 'b') {
-            
+            respond_ok(qd); 
         }
-
-        // demi_sgarray_t sga = demi_sgaalloc(DATA_SIZE);
-        // assert(sga.sga_segs != 0);
-        // memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
-
-        // push_wait(qd, &sga, &qr);
-        // assert(demi_sgafree(&sga) == 0);
     }
-
-
-    // while (nbytes < MAX_BYTES)
-    // {
-    //     demi_qresult_t qr;
-    //     demi_sgarray_t sga;
-
-    //     /* Pop scatter-gather array. */
-    //     pop_wait(qd, &qr);
-
-    //     /* Extract received scatter-gather array. */
-    //     // fprintf(stdout, "size %d", sizeof(demi_sgarray_t));
-    //     // memcpy(&sga, &qr.qr_value.sga, sizeof(demi_sgarray_t));
-    //     sga = demi_sgaalloc(DATA_SIZE);
-    //     assert(sga.sga_segs != 0);
-    //     memset(sga.sga_segs[0].sgaseg_buf, 1, DATA_SIZE);
-
-    //     nbytes += sga.sga_segs[0].sgaseg_len;
-
-    //     /* Push scatter-gather array. */
-    //     push_wait(qd, &sga, &qr);
-
-    //     /* Release received scatter-gather array. */
-    //     assert(demi_sgafree(&sga) == 0);
-
-    //     fprintf(stdout, "ping (%d)\n", nbytes);
-    // }
 }
 
 static void client(int argc, char *const argv[], const struct sockaddr_in *remote)
