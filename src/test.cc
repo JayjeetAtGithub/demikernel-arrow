@@ -44,7 +44,6 @@ static void respond_data(int qd, const uint8_t* buf, size_t size) {
     std::cout << "responding with " << size << " bytes" << std::endl;
     push_wait(qd, &sga, &qr);
     assert(demi_sgafree(&sga) == 0);
-    assert(demi_sgafree(&qr.qr_value.sga) == 0);
 }
 
 static void server(int argc, char *const argv[], struct sockaddr_in *local) {
