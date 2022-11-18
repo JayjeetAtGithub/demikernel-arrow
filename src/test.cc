@@ -42,6 +42,7 @@ static void respond_data(int qd, const uint8_t* buf, size_t size) {
     demi_sgarray_t sga = demi_sgaalloc(size);
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, buf, size);
+    std::cout << "responding with " << size << " bytes" << std::endl;
     push_wait(qd, &sga, &qr);
     assert(demi_sgafree(&sga) == 0);
 }
