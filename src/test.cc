@@ -8,7 +8,7 @@
 
 static demi_qresult_t request_control(int qd) {
     std::cout << "request_control" << std::endl;
-    demi_sgarray_t sga;
+    demi_sgarray_t sga = demi_sgaalloc(1);
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, "c", 1);
     push_wait(qd, &sga, &qr);
@@ -20,7 +20,7 @@ static demi_qresult_t request_control(int qd) {
 
 static demi_qresult_t request_data(int qd) {
     std::cout << "request_data" << std::endl;
-    demi_sgarray_t sga;
+    demi_sgarray_t sga = demi_sgaalloc(1);
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, "d", 1);
     push_wait(qd, &sga, &qr);
@@ -85,7 +85,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
 
         char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
         std::cout << "Received request: " << req << std::endl;
-        
+
         if (req == 'c') {
             s = reader->ReadNext(&batch);
             if (!s.ok() || batch == nullptr) {
