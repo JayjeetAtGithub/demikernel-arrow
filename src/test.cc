@@ -85,7 +85,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
 
         if (req == 'c') {
             s = reader->ReadNext(&batch);
-            std::cout << "Read batch : " << batch->num_rows() << std::endl;
             if (!s.ok() || batch == nullptr) {
                 std::cout << "Finished sending dataset." << std::endl;
                 respond_finish(qd);
@@ -97,6 +96,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
             bytes_remaining = buffer->size();
         } else if (req == 'd') {
             int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
+            std::cout << "Sending " << bytes_to_send << " bytes." << std::endl;
             respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
             bytes_remaining -= bytes_to_send;
         } else {
