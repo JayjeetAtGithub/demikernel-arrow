@@ -34,7 +34,7 @@ static void respond_finish(int qd) {
 }
 
 static void respond_data(int qd, const uint8_t* buf, size_t size) {
-    assert(size <= 1500);
+    assert(size <= 1025);
     demi_sgarray_t sga = demi_sgaalloc(size);
     demi_qresult_t qr;
     memcpy(sga.sga_segs[0].sgaseg_buf, buf, size);
@@ -93,7 +93,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
             respond_data(qd, reinterpret_cast<const uint8_t*>(to_buf(buffer->size())), sizeof(int32_t));
             bytes_remaining = buffer->size();
         } else if (req == 'd') {
-            int bytes_to_send = std::min(bytes_remaining, 1500);
+            int bytes_to_send = std::min(bytes_remaining, 1025);
             respond_data(qd, buffer->data() + buffer->size() - bytes_remaining, bytes_to_send);
             bytes_remaining -= bytes_to_send;
         } else {
