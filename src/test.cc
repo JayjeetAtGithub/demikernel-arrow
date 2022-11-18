@@ -83,7 +83,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
         assert(demi_sgafree(&qr.qr_value.sga) == 0);
 
         if (req == 'c') {
-            std::cout << "Received control request." << std::endl;
             s = reader->ReadNext(&batch);
             if (!s.ok() || batch == nullptr) {
                 std::cout << "Finished sending dataset." << std::endl;
@@ -117,6 +116,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     int req_mode = 1;
     uint8_t *buf;
 
+    int32_t total_rows = 0;
+
     while (true) {
         if (req_mode == 1) {
             demi_qresult_t qr = request_control(sockqd);
@@ -124,6 +125,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
             if (size == 1) {
                 char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
                 if (req == 'f') {
+                    std::cout << "Finished receiving dataset : " << total_rows << std::endl;
                     break;
                 }
             }
@@ -137,6 +139,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
             if (offset == size) {
                 auto batch = UnpackRecordBatch(buf, size).ValueOrDie();
                 std::cout << batch->ToString() << std::endl;
+                total_rows += batch->num_rows();
                 offset = 0;
                 size = 0;
                 req_mode = 1;
