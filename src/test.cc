@@ -31,9 +31,11 @@ static demi_qresult_t request_data(int qd) {
 }
 
 static void respond_finish(int qd) {
-    demi_sgarray_t sga;
+    demi_sgarray_t sga = demi_sgaalloc(1);
     demi_qresult_t qr;
+    memcpy(sga.sga_segs[0].sgaseg_buf, "f", 1);
     push_wait(qd, &sga, &qr);
+    assert(demi_sgafree(&sga) == 0);
 }
 
 static void respond_data(int qd, const uint8_t* buf, size_t size) {
@@ -127,13 +129,14 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     while (true) {
         if (req_mode == 1) {
             demi_qresult_t qr = request_control(sockqd);
-            if (qr.qr_value.sga.sga_segs[0].sgaseg_len == 0) {
-                break;
-            } else {
-                size = from_buf((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
-                std::cout << "Received size: " << size << std::endl;
-                req_mode = 2;
+            size = from_buf((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
+            if (size == 1) {
+                char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
+                if (req == 'f') {
+                    break;
+                }
             }
+            req_mode = 2;
             assert(demi_sgafree(&qr.qr_value.sga) == 0);
         } else if (req_mode == 2) {
             std::cout << "Requesting data: " << size - offset << std::endl;
