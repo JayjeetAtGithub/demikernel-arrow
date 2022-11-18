@@ -111,12 +111,12 @@ static void pop_wait(int qd, demi_qresult_t *qr)
 }
 
 static char* to_buf(int32_t val) {
-    char buf[4];
+    char *buf = (char*)malloc(sizeof(int32_t));
     buf[0] = (val >> 24) & 0xFF;
     buf[1] = (val >> 16) & 0xFF;
     buf[2] = (val >> 8) & 0xFF;
     buf[3] = val & 0xFF;
-    return &buf;
+    return buf;
 }
 
 static int32_t from_buf(char* buf) {
