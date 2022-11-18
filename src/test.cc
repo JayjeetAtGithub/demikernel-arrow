@@ -5,12 +5,11 @@
 #include "utils.h"
 #include "compute.h"
 
-// 2 = OK
 
-static void respond_ok(int qd) {
+static void respond_finish(int qd) {
     demi_sgarray_t sga = demi_sgaalloc(1);
     demi_qresult_t qr;
-    memset(sga.sga_segs[0].sgaseg_buf, 2, 1);
+    memcpy(sga.sga_segs[0].sgaseg_buf, "x", 1);
     push_wait(qd, &sga, &qr);
     assert(demi_sgafree(&sga) == 0);
 }
@@ -64,11 +63,10 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
 
         arrow::Status s = reader->ReadNext(&batch);
         if (!s.ok() || batch == nullptr) {
-            sga = demi_sgaalloc(10);
-            memset(sga.sga_segs[0].sgaseg_buf, 1, 10);
-            push_wait(qd, &sga, &qr);
-            assert(demi_sgafree(&sga) == 0);
+            respond_finish(qd);
+            std::cout << "Finished sending data." << std::endl;
         } else {
+            std::cout << "Number of rows: " << batch->num_rows() << std::endl;
             auto options = arrow::ipc::IpcWriteOptions::Defaults();
             std::shared_ptr<arrow::Buffer> buffer = 
                 arrow::ipc::SerializeRecordBatch(*batch, options).ValueOrDie();
@@ -82,7 +80,6 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local)
                     bytes_remaining -= bytes_to_send;
                 }
             }
-            respond_ok(qd); 
         }
     }
 }
@@ -92,53 +89,37 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     int nbytes = 0;
     int sockqd = -1;
 
-    /* Initialize demikernel */
     assert(demi_init(argc, argv) == 0);
-
-    /* Setup socket. */
     assert(demi_socket(&sockqd, AF_INET, SOCK_STREAM, 0) == 0);
-
-    /* Connect to server. */
     connect_wait(sockqd, remote);
 
-    /* Run. */
-    while (nbytes < 1024*1024)
+    while (true)
     {
         demi_qresult_t qr;
         demi_sgarray_t sga;
 
-        /* Allocate scatter-gather array. */
         sga = demi_sgaalloc(1);
         assert(sga.sga_segs != 0);
 
-        /* Cook request data. */
         memcpy(sga.sga_segs[0].sgaseg_buf, "a", 1);
 
-        /* Push scatter-gather array. */
         push_wait(sockqd, &sga, &qr);
 
-        /* Release sent scatter-gather array. */
         assert(demi_sgafree(&sga) == 0);
 
-        /* Pop data scatter-gather array. */
         memset(&qr, 0, sizeof(demi_qresult_t));
         pop_wait(sockqd, &qr);
 
-        /* Check payload. */
-        // for (uint32_t i = 0; i < qr.qr_value.sga.sga_segs[0].sgaseg_len; i++)
-        //     assert(((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf)[i] == 1);
-        nbytes += qr.qr_value.sga.sga_segs[0].sgaseg_len;
-
-        /* Release received scatter-gather array. */
+        char req = *((char *)qr.qr_value.sga.sga_segs[0].sgaseg_buf);
         assert(demi_sgafree(&qr.qr_value.sga) == 0);
-
-        fprintf(stdout, "pong (%d)\n", nbytes);
+        if (req == 'x') {
+            break;
+        }
     }
 }
 
 int main(int argc, char *const argv[])
 {
-    /* Install signal handlers. */
     signal(SIGINT, sighandler);
     signal(SIGQUIT, sighandler);
     signal(SIGTSTP, sighandler);
@@ -146,11 +127,7 @@ int main(int argc, char *const argv[])
     if (argc >= 4)
     {
         struct sockaddr_in saddr = {0};
-
-        /* Build addresses.*/
         build_sockaddr(argv[2], argv[3], &saddr);
-
-        /* Run. */
         if (!strcmp(argv[1], "--server"))
             server(argc, argv, &saddr);
         else if (!strcmp(argv[1], "--client"))
