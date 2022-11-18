@@ -86,6 +86,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
         assert(demi_sgafree(&qr.qr_value.sga) == 0);
 
         if (req == 'c') {
+            std::cout << "Received control request." << std::endl;
             s = reader->ReadNext(&batch);
             if (!s.ok() || batch == nullptr) {
                 std::cout << "Finished sending dataset." << std::endl;
