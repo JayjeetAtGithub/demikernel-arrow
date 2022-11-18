@@ -134,6 +134,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         } else if (req_mode == 2) {
             demi_qresult_t qr = request_data(sockqd);
             offset += qr.qr_value.sga.sga_segs[0].sgaseg_len;
+            std::cout << "Offset at " << offset << std::endl;
             if (offset == size) {
                 offset = 0;
                 size = 0;
