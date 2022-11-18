@@ -15,7 +15,7 @@ static void respond_ok(int qd) {
     assert(demi_sgafree(&sga) == 0);
 }
 
-static void respond_data(int qd, uint8_t* buf, size_t size) {
+static void respond_data(int qd, const uint8_t* buf, size_t size) {
     assert(size <= DATA_SIZE);
     demi_sgarray_t sga = demi_sgaalloc(size);
     demi_qresult_t qr;
