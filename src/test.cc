@@ -92,7 +92,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
                 break;
             }
             buffer = arrow::ipc::SerializeRecordBatch(*batch, arrow::ipc::IpcWriteOptions::Defaults()).ValueOrDie();
-            respond_data(qd, to_buf(buffer->size()), sizeof(int32_t));
+            respond_data(qd, reinterpret_cast<const uint8_t*>(to_buf(buffer->size())), sizeof(int32_t));
             bytes_remaining = buffer->size();
         } else if (req == 'd') {
             int bytes_to_send = std::min(bytes_remaining, DATA_SIZE);
