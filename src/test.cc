@@ -133,6 +133,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
         } else if (req_mode == 2) {
             std::cout << "Requesting data: " << size - offset << std::endl;
             demi_qresult_t qr = request_data(sockqd);
+            std::cout << "Received data: " << qr.qr_value.sga.sga_segs[0].sgaseg_len << std::endl;
             offset += qr.qr_value.sga.sga_segs[0].sgaseg_len;
             if (offset >= size) {
                 offset = 0;
