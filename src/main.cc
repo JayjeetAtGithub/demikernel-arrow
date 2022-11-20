@@ -57,7 +57,7 @@ static void server(int argc, char *const argv[], struct sockaddr_in *local) {
 
     cp::ExecContext exec_ctx;
     std::shared_ptr<arrow::RecordBatchReader> reader = 
-        ScanDataset(exec_ctx, "dataset", "1").ValueOrDie();
+        ScanDataset(exec_ctx, "dataset", "100").ValueOrDie();
     std::shared_ptr<arrow::RecordBatch> batch;
     demi_sgarray_t sga;
     demi_qresult_t qr;
