@@ -154,7 +154,7 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
  
     std::cout << "Time taken by function: "
-         << duration.count() << " ms" << endl;
+         << duration.count() << " ms" << std::endl;
 }
 
 int main(int argc, char *const argv[]) {
