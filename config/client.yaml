@@ -17,10 +17,10 @@ server:
     port: 3000
 catnip:
   my_ipv4_addr: 10.10.1.1
-  my_link_addr: "0c:42:a1:dd:57:30"
-  my_interface_name: "ens1f0"
+  my_link_addr: "9c:dc:71:5d:01:91"
+  my_interface_name: "ens1f1"
   arp_table:
-    "0c:42:a1:dd:5b:90": "10.10.1.2"
-    "0c:42:a1:dd:57:30": "10.10.1.1"
+    "9c:dc:71:5d:f5:a1": "10.10.1.2"
+    "9c:dc:71:5d:01:91": "10.10.1.1"
 dpdk:
-  eal_init: ["-c", "0xff", "-n", "4", "-w", "41:00.0","--proc-type=auto"]
+  eal_init: ["-c", "0xff", "-n", "4", "-w", "03:00.1","--proc-type=auto"]
