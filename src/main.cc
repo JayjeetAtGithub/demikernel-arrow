@@ -117,7 +117,8 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
     uint8_t *buf;
 
     int32_t total_rows = 0;
-
+    
+    auto start = std::chrono::high_resolution_clock::now();
     while (true) {
         if (req_mode == 1) {
             demi_qresult_t qr = request_control(sockqd);
@@ -149,6 +150,11 @@ static void client(int argc, char *const argv[], const struct sockaddr_in *remot
             assert(demi_sgafree(&qr.qr_value.sga) == 0);
         }
     }
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+ 
+    std::cout << "Time taken by function: "
+         << duration.count() << " ms" << endl;
 }
 
 int main(int argc, char *const argv[]) {
